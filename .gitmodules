@@ -1,0 +1,3 @@
+[submodule "deps/RGL"]
+	path = deps/RGL
+	url = https://github.com/RavEngine/RGL

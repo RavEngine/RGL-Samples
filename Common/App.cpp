@@ -1,0 +1,42 @@
+#include "App.hpp"
+#include <SDL.h>
+#include <SDL_main.h>
+#include <iostream>
+
+using namespace std;
+
+
+int AppBase::run(int argc, char** argv) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+		char buf[512]{ 0 };
+		SDL_GetErrorMsg(buf, 512);
+		cerr << "Failed to init SDL2 : " << buf  << endl;
+		return 1;
+	}
+	window = SDL_CreateWindow(
+		SampleName(),
+		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		800, 600,
+		SDL_WINDOW_SHOWN
+	);
+	if (!window) {
+		char buf[512]{ 0 };
+		SDL_GetErrorMsg(buf, 512);
+		cerr << "Failed to create window: " << buf << endl;
+	}
+
+	SDL_Event event;
+	bool exit = false;
+	while (!exit) {
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+			case SDL_QUIT:
+				exit = true;
+				break;
+			}
+		}
+		tick();
+	}
+	
+	return 0;
+}
