@@ -17,7 +17,7 @@ int AppBase::run(int argc, char** argv) {
 		SampleName(),
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		800, 600,
-		SDL_WINDOW_SHOWN
+		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 	if (!window) {
 		char buf[512]{ 0 };
@@ -25,18 +25,32 @@ int AppBase::run(int argc, char** argv) {
 		cerr << "Failed to create window: " << buf << endl;
 	}
 
+	init();
+
 	SDL_Event event;
 	bool exit = false;
 	while (!exit) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
-			case SDL_QUIT:
-				exit = true;
-				break;
+				case SDL_QUIT:
+					exit = true;
+					break;
+				case SDL_WINDOWEVENT: {
+					const SDL_WindowEvent& wev = event.window;
+					switch (wev.event) {
+						case SDL_WINDOWEVENT_RESIZED:
+						case SDL_WINDOWEVENT_SIZE_CHANGED:
+							sizechanged(wev.data1, wev.data2);
+							break;
+					}
+				}
 			}
 		}
 		tick();
 	}
+
+	shutdown();
+	SDL_DestroyWindow(window);
 	
 	return 0;
 }
