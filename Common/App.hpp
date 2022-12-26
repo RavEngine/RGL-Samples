@@ -9,7 +9,7 @@ protected:
 public:
 	int run(int argc, char** argv);
 	virtual const char* SampleName() = 0;
-	virtual void init() = 0;
+	virtual void init(int argc, char** argv) = 0;
 	virtual void tick() = 0;
 	virtual void shutdown() = 0;
 	virtual void sizechanged(int width, int height) {}

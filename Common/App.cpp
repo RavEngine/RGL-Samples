@@ -25,7 +25,7 @@ int AppBase::run(int argc, char** argv) {
 		cerr << "Failed to create window: " << buf << endl;
 	}
 
-	init();
+	init(argc, argv);
 
 	SDL_Event event;
 	bool exit = false;
@@ -51,6 +51,8 @@ int AppBase::run(int argc, char** argv) {
 
 	shutdown();
 	SDL_DestroyWindow(window);
+	window = nullptr;
+	SDL_Quit();
 	
 	return 0;
 }
