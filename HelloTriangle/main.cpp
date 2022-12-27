@@ -16,7 +16,7 @@ struct HelloWorld : public AppBase {
 	}
 	void init(int argc, char** argv) final {
 		RGL::InitOptions options{
-			.api = RGL::API::PlatformDefault,
+			.api = RGL::API::Vulkan,
 			.appName = SampleName(),
 			.engineName = "RGLSampleFramework",
 			.appVersion = {0,0,0,1},
@@ -46,9 +46,12 @@ struct HelloWorld : public AppBase {
 #endif
 			true
 		);
+
+		int width, height;
+		SDL_GetWindowSizeInPixels(window, &width, &height);
 		
 		// create a swapchain for the surface
-		swapchain = device->CreateSwapchain(surface);
+		swapchain = device->CreateSwapchain(surface,width,height);
 	}
 	void tick() final {
 
