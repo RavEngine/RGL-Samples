@@ -9,6 +9,7 @@
 struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
 	std::shared_ptr<RGL::ISurface> surface;
+	std::shared_ptr<RGL::ISwapchain> swapchain;
 
 	const char* SampleName() {
 		return "HelloTriangle";
@@ -45,6 +46,9 @@ struct HelloWorld : public AppBase {
 #endif
 			true
 		);
+		
+		// create a swapchain for the surface
+		swapchain = device->CreateSwapchain(surface);
 	}
 	void tick() final {
 
@@ -53,7 +57,9 @@ struct HelloWorld : public AppBase {
 	void shutdown() final {
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
+		// to ensure all references are cleaned up
 		
+		swapchain.reset();
 		surface.reset();
 		device.reset();
 
