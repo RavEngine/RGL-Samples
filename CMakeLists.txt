@@ -34,6 +34,7 @@ macro(add_sample dir)
 
 	set_target_properties(${dir} PROPERTIES
 		MACOSX_BUNDLE TRUE
+		XCODE_GENERATE_SCHEME ON
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>"
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)

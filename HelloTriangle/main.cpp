@@ -39,11 +39,11 @@ struct HelloWorld : public AppBase {
 		}
 		surface = RGL::CreateSurfaceFromPlatformHandle(
 #ifdef _WIN32
-			&wmi.info.win.window
+			&wmi.info.win.window,
 #else
-#error not implemented
+			wmi.info.cocoa.window,
 #endif
-		
+			true
 		);
 	}
 	void tick() final {

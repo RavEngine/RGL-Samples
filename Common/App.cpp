@@ -2,13 +2,14 @@
 #include <SDL.h>
 #include <SDL_main.h>
 #include <iostream>
+#include <array>
 
 using namespace std;
 
 
 int AppBase::run(int argc, char** argv) {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-		char buf[512]{ 0 };
+		char buf[512];
 		SDL_GetErrorMsg(buf, 512);
 		cerr << "Failed to init SDL2 : " << buf  << endl;
 		return 1;
@@ -20,7 +21,7 @@ int AppBase::run(int argc, char** argv) {
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 	if (!window) {
-		char buf[512]{ 0 };
+		char buf[512];
 		SDL_GetErrorMsg(buf, 512);
 		cerr << "Failed to create window: " << buf << endl;
 	}
