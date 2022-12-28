@@ -2,6 +2,7 @@
 #include "Common/App.hpp"
 #include <RGL/Device.hpp>
 #include <RGL/Surface.hpp>
+#include <RGL/Pipeline.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -10,6 +11,7 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
 	std::shared_ptr<RGL::ISurface> surface;
 	std::shared_ptr<RGL::ISwapchain> swapchain;
+	std::shared_ptr<RGL::IRenderPass> renderPass;
 
 	const char* SampleName() {
 		return "HelloTriangle";
@@ -52,9 +54,31 @@ struct HelloWorld : public AppBase {
 		
 		// create a swapchain for the surface
 		swapchain = device->CreateSwapchain(surface,width,height);
+
+		RGL::RenderPassConfig config{
+			.attachments = {
+				{
+					.format = RGL::TextureFormat::BGRA8_Unorm,
+					.loadOp = RGL::LoadAccessOperation::Clear,
+					.storeOp = RGL::StoreAccessOperation::Store,
+				}
+			},
+			.subpasses = {
+				{
+					.type = decltype(config)::SubpassDesc::Type::Graphics,
+					.colorAttachmentIndices = {0},
+				}
+			}
+		};
+
+		renderPass = device->CreateRenderPass(config);
 	}
 	void tick() final {
 
+	}
+
+	void sizechanged(int width, int height) final {
+		swapchain->Resize(width, height);
 	}
 
 	void shutdown() final {
@@ -62,6 +86,7 @@ struct HelloWorld : public AppBase {
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
 		
+		renderPass.reset();
 		swapchain.reset();
 		surface.reset();
 		device.reset();
