@@ -3,10 +3,14 @@
 #include <RGL/Device.hpp>
 #include <RGL/Surface.hpp>
 #include <RGL/Pipeline.hpp>
+#include <RGL/Swapchain.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <glm/glm.hpp>
+#include <fstream>
+#include <format>
+#include <filesystem>
 
 struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
@@ -16,10 +20,27 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
 	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
 
+	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
+
 	struct Vertex {
 		glm::vec2 pos;
 		glm::vec3 color;
 	};
+
+	static std::vector<uint8_t> readFile(const std::filesystem::path& filename) {
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+		if (!file.is_open()) {
+			throw std::runtime_error(std::format("failed to open {}", filename.string()));
+		}
+
+		size_t fileSize = (size_t)file.tellg();
+		std::vector<uint8_t> buffer(fileSize);
+		file.seekg(0);
+		file.read((char*)(buffer.data()), fileSize);
+		file.close();
+		return buffer;
+	}
 
 	const char* SampleName() {
 		return "HelloTriangle";
@@ -81,6 +102,12 @@ struct HelloWorld : public AppBase {
 		};
 		renderPass = device->CreateRenderPass(config);
 
+		// load our shaders
+		auto bindata = readFile("vk.vert.spv");
+		vertexShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
+		bindata = readFile("vk.frag.spv");
+		fragmentShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
+
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
 
@@ -92,12 +119,12 @@ struct HelloWorld : public AppBase {
 			.stages = {
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
-					.shaderModule = nullptr, // TODO: fix
+					.shaderModule = vertexShaderLibrary,
 					.entryPoint = "main"
 				},
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
-					.shaderModule = nullptr, // TODO: fix
+					.shaderModule = fragmentShaderLibrary,
 					.entryPoint = "main"
 				}
 			},
