@@ -6,12 +6,20 @@
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
+#include <glm/glm.hpp>
 
 struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
 	std::shared_ptr<RGL::ISurface> surface;
 	std::shared_ptr<RGL::ISwapchain> swapchain;
 	std::shared_ptr<RGL::IRenderPass> renderPass;
+	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
+	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
+
+	struct Vertex {
+		glm::vec2 pos;
+		glm::vec3 color;
+	};
 
 	const char* SampleName() {
 		return "HelloTriangle";
@@ -55,6 +63,7 @@ struct HelloWorld : public AppBase {
 		// create a swapchain for the surface
 		swapchain = device->CreateSwapchain(surface,width,height);
 
+		// create a renderpass
 		RGL::RenderPassConfig config{
 			.attachments = {
 				{
@@ -70,8 +79,66 @@ struct HelloWorld : public AppBase {
 				}
 			}
 		};
-
 		renderPass = device->CreateRenderPass(config);
+
+		// create a pipeline layout
+		RGL::PipelineLayoutDescriptor layoutConfig{
+
+		};
+		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+
+		// create a render pipeline
+		RGL::RenderPipelineDescriptor rpd{
+			.stages = {
+				{
+					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
+					.shaderModule = nullptr, // TODO: fix
+					.entryPoint = "main"
+				},
+				{
+					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
+					.shaderModule = nullptr, // TODO: fix
+					.entryPoint = "main"
+				}
+			},
+			.vertexConfig = {
+				.vertexBindinDesc = {
+					.binding = 0,
+					.stride = sizeof(Vertex),
+				},
+				.attributeDescs = {
+					{
+						.location = 0,
+						.binding = 0,
+						.offset = offsetof(Vertex,pos),
+						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+					},
+					{
+						.location = 1,
+						.binding = 0,
+						.offset = offsetof(Vertex,color),
+						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
+					}
+				}
+			},
+			.inputAssembly = {
+				.topology = RGL::PrimitiveTopology::TriangleList,
+			},
+			.viewport = {
+				.width = (float)width,
+				.height = (float)height
+			},
+			.scissor = {
+				.extent = {width, height}
+			},
+			.colorBlendConfig{
+				.attachments = {{}}	// default init one attachment to match the attachment earlier
+			},
+			.pipelineLayout = nullptr,	//TODO: pipelinelayout
+			.renderpass = renderPass,
+			.subpassIndex = 0
+		};
+		renderPipeline = device->CreateRenderPipeline(renderPipelineLayout, renderPass, rpd);
 	}
 	void tick() final {
 
@@ -85,7 +152,9 @@ struct HelloWorld : public AppBase {
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
-		
+
+		renderPipeline.reset();
+		renderPipelineLayout.reset();
 		renderPass.reset();
 		swapchain.reset();
 		surface.reset();

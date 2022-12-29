@@ -16,6 +16,7 @@ set(SDL_LIBC ON CACHE BOOL "" FORCE)
 add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
+add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 
 # App framework using SDL2
 add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp")
@@ -24,6 +25,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 	PUBLIC
 		SDL2-static SDL2main
 		RGL
+		glm
 )
 
 macro(add_sample dir)
