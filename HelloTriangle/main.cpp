@@ -110,7 +110,13 @@ struct HelloWorld : public AppBase {
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
-
+			.bindings = {
+				{
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::UniformBuffer,
+					.descriptorCount = 1,
+					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex
+				}
+			}
 		};
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
@@ -179,6 +185,8 @@ struct HelloWorld : public AppBase {
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
+		vertexShaderLibrary.reset();
+		fragmentShaderLibrary.reset();
 
 		renderPipeline.reset();
 		renderPipelineLayout.reset();
