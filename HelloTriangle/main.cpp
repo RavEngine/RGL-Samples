@@ -4,6 +4,7 @@
 #include <RGL/Surface.hpp>
 #include <RGL/Pipeline.hpp>
 #include <RGL/Swapchain.hpp>
+#include <RGL/Buffer.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -19,6 +20,7 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IRenderPass> renderPass;
 	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
 	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
+	std::shared_ptr<RGL::IBuffer> uniformBuffer;
 
 	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
 
@@ -26,6 +28,10 @@ struct HelloWorld : public AppBase {
 		glm::vec2 pos;
 		glm::vec3 color;
 	};
+
+	struct UniformBufferObject {
+		float time = 0;
+	} ubo;
 
 	static std::vector<uint8_t> readFile(const std::filesystem::path& filename) {
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -108,6 +114,11 @@ struct HelloWorld : public AppBase {
 		bindata = readFile("vk.frag.spv");
 		fragmentShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
 
+		uniformBuffer = device->CreateBuffer({
+			RGL::BufferConfig::Type::UniformBuffer, 
+			ubo
+		});
+
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
 			.bindings = {
@@ -119,6 +130,9 @@ struct HelloWorld : public AppBase {
 			}
 		};
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+
+		// set the layout's dimensions and binding position
+		renderPipelineLayout->SetLayout({ uniformBuffer, 0, ubo });	//TODO: implement IBuffer
 
 		// create a render pipeline
 		RGL::RenderPipelineDescriptor rpd{
@@ -174,7 +188,7 @@ struct HelloWorld : public AppBase {
 		renderPipeline = device->CreateRenderPipeline(renderPipelineLayout, renderPass, rpd);
 	}
 	void tick() final {
-
+		uniformBuffer->UpdateBufferData(&ubo);
 	}
 
 	void sizechanged(int width, int height) final {
@@ -185,6 +199,8 @@ struct HelloWorld : public AppBase {
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
+		uniformBuffer.reset();
+
 		vertexShaderLibrary.reset();
 		fragmentShaderLibrary.reset();
 
