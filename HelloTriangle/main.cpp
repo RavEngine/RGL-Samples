@@ -20,7 +20,7 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IRenderPass> renderPass;
 	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
 	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-	std::shared_ptr<RGL::IBuffer> uniformBuffer;
+	std::shared_ptr<RGL::IBuffer> uniformBuffer, vertexBuffer;
 
 	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
 
@@ -32,6 +32,12 @@ struct HelloWorld : public AppBase {
 	struct UniformBufferObject {
 		float time = 0;
 	} ubo;
+
+	constexpr static Vertex vertices[] = {
+		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
 
 	static std::vector<uint8_t> readFile(const std::filesystem::path& filename) {
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -118,6 +124,11 @@ struct HelloWorld : public AppBase {
 			RGL::BufferConfig::Type::UniformBuffer, 
 			ubo
 		});
+		vertexBuffer = device->CreateBuffer({
+			RGL::BufferConfig::Type::VertexBuffer,
+			vertices
+		});
+		vertexBuffer->SetBufferData({&vertices, sizeof(vertices)});
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
@@ -188,7 +199,7 @@ struct HelloWorld : public AppBase {
 		renderPipeline = device->CreateRenderPipeline(renderPipelineLayout, renderPass, rpd);
 	}
 	void tick() final {
-		uniformBuffer->UpdateBufferData(&ubo);
+		uniformBuffer->UpdateBufferData({&ubo, sizeof(ubo)});
 	}
 
 	void sizechanged(int width, int height) final {
@@ -200,6 +211,7 @@ struct HelloWorld : public AppBase {
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
 		uniformBuffer.reset();
+		vertexBuffer.reset();
 
 		vertexShaderLibrary.reset();
 		fragmentShaderLibrary.reset();
