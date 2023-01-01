@@ -29,6 +29,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 )
 
 macro(add_sample dir)
+	set(dir "${CMAKE_CURRENT_LIST_DIR}/${dir}")
 	file(GLOB_RECURSE SOURCES "${dir}/*.cpp" "${dir}/*.hpp" "${dir}/*.h")
 	add_executable(${dir} ${SOURCES})
 	target_compile_features(${dir} PRIVATE cxx_std_20)
@@ -37,9 +38,32 @@ macro(add_sample dir)
 	set_target_properties(${dir} PROPERTIES
 		MACOSX_BUNDLE TRUE
 		XCODE_GENERATE_SCHEME ON
-		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>"
+		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/"
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
+
+	# TODO: replace glslc with custom compiler
+	macro(vk_compile infile)
+		get_filename_component(name_only ${infile} NAME)
+		set(outname "${CMAKE_CURRENT_BINARY_DIR}/${name_only}.spv")
+		list(APPEND all_vk_shders "${outname}")
+		add_custom_command(
+			PRE_BUILD
+			OUTPUT "${outname}"
+			DEPENDS ${infile}
+			COMMAND glslc "${infile}" -o "${outname}"
+		)
+	endmacro()
+
+	file(GLOB vk_shaders "${dir}/*.vert" "${dir}/*.frag")
+	foreach(FILE ${vk_shaders})
+		vk_compile("${FILE}")
+	endforeach()
+
+	add_custom_target(${dir}_CompileShaders
+		DEPENDS ${all_vk_shders}
+	)
+	add_dependencies(${dir} ${dir}_CompileShaders)
 endmacro()
 
 add_sample(HelloTriangle)
