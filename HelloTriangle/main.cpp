@@ -5,6 +5,7 @@
 #include <RGL/Pipeline.hpp>
 #include <RGL/Swapchain.hpp>
 #include <RGL/Buffer.hpp>
+#include <RGL/CommandBuffer.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -12,6 +13,7 @@
 #include <fstream>
 #include <format>
 #include <filesystem>
+#undef CreateSemaphore
 
 struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
@@ -23,6 +25,11 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IBuffer> uniformBuffer, vertexBuffer;
 
 	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
+
+	std::shared_ptr<RGL::ICommandQueue> commandQueue;
+	std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
+	std::shared_ptr<RGL::IFence> swapchainFence;
+	std::shared_ptr<RGL::ISemaphore> imageAvailableSemaphore, renderCompleteSemaphore;
 
 	struct Vertex {
 		glm::vec2 pos;
@@ -95,6 +102,9 @@ struct HelloWorld : public AppBase {
 		
 		// create a swapchain for the surface
 		swapchain = device->CreateSwapchain(surface,width,height);
+		swapchainFence = device->CreateFence(true);  // create it already signaled, so that we won't block forever waiting for a render that won't happen on the first call to tick
+		imageAvailableSemaphore = device->CreateSemaphore();
+		renderCompleteSemaphore = device->CreateSemaphore();
 
 		// create a renderpass
 		RGL::RenderPassConfig config{
@@ -197,9 +207,52 @@ struct HelloWorld : public AppBase {
 			.subpassIndex = 0
 		};
 		renderPipeline = device->CreateRenderPipeline(renderPipelineLayout, renderPass, rpd);
+
+		// create command buffer
+		commandQueue = device->CreateCommandQueue(RGL::QueueType::AllCommands);
+		commandBuffer = commandQueue->CreateCommandBuffer();
 	}
 	void tick() final {
+		ubo.time++;
 		uniformBuffer->UpdateBufferData({&ubo, sizeof(ubo)});
+		
+		RGL::SwapchainPresentConfig presentConfig{
+			.waitSemaphores = {&renderCompleteSemaphore,1}
+		};
+
+		swapchain->GetNextImage(&presentConfig.imageIndex, imageAvailableSemaphore);
+		swapchainFence->Wait();
+		swapchainFence->Reset();
+		commandBuffer->Reset();
+		commandBuffer->Begin();
+		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
+		auto nextImgSize = nextimg->GetSize();
+
+		RGL::BindPipelineConfig bindConfig{
+			.targetFramebuffer = nextimg,
+			.buffers = {
+				.vertexBuffer = vertexBuffer,
+				.offset = 0,
+			},
+			.viewport = {
+				.width = static_cast<float>(nextImgSize.width),
+				.height = static_cast<float>(nextImgSize.height),
+			},
+			.scissor = {
+				.extent = {nextImgSize.width, nextImgSize.height}
+			}
+		};
+		commandBuffer->BindPipeline(renderPipeline, bindConfig);
+		commandBuffer->End();
+		
+		RGL::CommitConfig commitconfig{
+			.signalFence = swapchainFence,
+			.waitSemaphores = {&imageAvailableSemaphore,1},
+			.signalSemaphores = {&renderCompleteSemaphore, 1}
+		};
+		commandBuffer->Commit(commitconfig);
+
+		swapchain->Present(presentConfig);
 	}
 
 	void sizechanged(int width, int height) final {
@@ -207,9 +260,15 @@ struct HelloWorld : public AppBase {
 	}
 
 	void shutdown() final {
+		device->BlockUntilIdle();
+
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
+
+		commandBuffer.reset();
+		commandQueue.reset();
+
 		uniformBuffer.reset();
 		vertexBuffer.reset();
 
@@ -219,6 +278,9 @@ struct HelloWorld : public AppBase {
 		renderPipeline.reset();
 		renderPipelineLayout.reset();
 		renderPass.reset();
+		renderCompleteSemaphore.reset();
+		imageAvailableSemaphore.reset();
+		swapchainFence.reset();
 		swapchain.reset();
 		surface.reset();
 		device.reset();
