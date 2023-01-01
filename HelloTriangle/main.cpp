@@ -234,6 +234,7 @@ struct HelloWorld : public AppBase {
 				.vertexBuffer = vertexBuffer,
 				.offset = 0,
 			},
+			.numVertices = 3,
 			.viewport = {
 				.width = static_cast<float>(nextImgSize.width),
 				.height = static_cast<float>(nextImgSize.height),
