@@ -43,27 +43,33 @@ macro(add_sample dir)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
 
 	# TODO: replace glslc with custom compiler
-	macro(vk_compile infile)
+	macro(shader_compile infile stage)
 		get_filename_component(name_only ${infile} NAME)
 		set(outname "${CMAKE_CURRENT_BINARY_DIR}/${name_only}.spv")
-		list(APPEND all_vk_shders "${outname}")
+		list(APPEND all_shaders "${outname}")
 		add_custom_command(
 			PRE_BUILD
 			OUTPUT "${outname}"
 			DEPENDS ${infile}
-			COMMAND glslc "${infile}" -o "${outname}"
+			COMMAND ${rglc_path} -f "${infile}" -o "${outname}" --api Vulkan --stage ${stage} --debug
 		)
 	endmacro()
 
-	file(GLOB vk_shaders "${dir}/*.vert" "${dir}/*.frag")
-	foreach(FILE ${vk_shaders})
-		vk_compile("${FILE}")
+	file(GLOB all_shaders "${dir}/*.vert" "${dir}/*.frag")
+	file(GLOB all_verts "${dir}/*.vert")
+	foreach(FILE ${all_verts})
+		shader_compile("${FILE}" "vertex")
+	endforeach()
+	file(GLOB all_frags "${dir}/*.frag")
+	foreach(FILE ${all_frags})
+		shader_compile("${FILE}" "fragment")
 	endforeach()
 
 	add_custom_target(${dir}_CompileShaders
-		DEPENDS ${all_vk_shders}
+		DEPENDS ${all_shaders}
 	)
 	add_dependencies(${dir} ${dir}_CompileShaders)
+	add_dependencies(${dir}_CompileShaders rglc)
 endmacro()
 
 add_sample(HelloTriangle)
