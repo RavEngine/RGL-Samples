@@ -199,6 +199,9 @@ struct HelloWorld : public AppBase {
 			.scissor = {
 				.extent = {width, height}
 			},
+			.rasterizerConfig = {
+				.windingOrder = decltype(rpd)::RasterizerConfig::WindingOrder::Counterclockwise,
+			},
 			.colorBlendConfig{
 				.attachments = {{}}	// default init one attachment to match the attachment earlier
 			},
