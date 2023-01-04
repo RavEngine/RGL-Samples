@@ -205,11 +205,11 @@ struct HelloWorld : public AppBase {
 			.colorBlendConfig{
 				.attachments = {{}}	// default init one attachment to match the attachment earlier
 			},
-			.pipelineLayout = nullptr,	//TODO: pipelinelayout
+			.pipelineLayout = renderPipelineLayout,
 			.renderpass = renderPass,
 			.subpassIndex = 0
 		};
-		renderPipeline = device->CreateRenderPipeline(renderPipelineLayout, renderPass, rpd);
+		renderPipeline = device->CreateRenderPipeline(rpd);
 
 		// create command buffer
 		commandQueue = device->CreateCommandQueue(RGL::QueueType::AllCommands);
