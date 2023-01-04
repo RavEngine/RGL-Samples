@@ -42,27 +42,42 @@ macro(add_sample dir)
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
 
-	# TODO: replace glslc with custom compiler
-	macro(shader_compile infile stage)
+	macro(shader_compile infile stage api extension)
 		get_filename_component(name_only ${infile} NAME)
-		set(outname "${CMAKE_CURRENT_BINARY_DIR}/${name_only}.spv")
+		set(outname "${CMAKE_CURRENT_BINARY_DIR}/shaders/${api}/${name_only}.${extension}")
 		list(APPEND all_shaders "${outname}")
 		add_custom_command(
 			PRE_BUILD
 			OUTPUT "${outname}"
 			DEPENDS ${infile}
-			COMMAND ${rglc_path} -f "${infile}" -o "${outname}" --api Vulkan --stage ${stage} --debug
+			COMMAND ${rglc_path} -f "${infile}" -o "${outname}" --api ${api} --stage ${stage} --debug
 		)
 	endmacro()
 
 	file(GLOB all_shaders "${dir}/*.vert" "${dir}/*.frag")
 	file(GLOB all_verts "${dir}/*.vert")
 	foreach(FILE ${all_verts})
-		shader_compile("${FILE}" "vertex")
+		if(RGL_VK_AVAILABLE)
+			shader_compile("${FILE}" "vertex" "Vulkan" "spv")
+		endif()
+		if(RGL_DX12_AVAILABLE)
+			shader_compile("${FILE}" "vertex" "Direct3D12" "cso")
+		endif()
+		if(RGL_MTL_AVAILABLE)
+			shader_compile("${FILE}" "vertex" "Metal" "mtllib")
+		endif()
 	endforeach()
 	file(GLOB all_frags "${dir}/*.frag")
 	foreach(FILE ${all_frags})
-		shader_compile("${FILE}" "fragment")
+		if(RGL_VK_AVAILABLE)
+			shader_compile("${FILE}" "fragment" "Vulkan" "spv")
+		endif()
+		if(RGL_DX12_AVAILABLE)
+			shader_compile("${FILE}" "fragment" "Direct3D12" "cso")
+		endif()
+		if(RGL_MTL_AVAILABLE)
+			shader_compile("${FILE}" "fragment" "Metal" "mtllib")
+		endif()
 	endforeach()
 
 	add_custom_target(${dir}_CompileShaders
@@ -73,3 +88,12 @@ macro(add_sample dir)
 endmacro()
 
 add_sample(HelloTriangle)
+
+set_target_properties(
+	"SDL2main"
+	"SDL2-static"
+	"sdl_headers_copy"
+	"RGL-Samples-Common"
+	PROPERTIES 
+	FOLDER "RGL Samples Dependencies"
+)

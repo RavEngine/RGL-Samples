@@ -125,9 +125,9 @@ struct HelloWorld : public AppBase {
 		renderPass = device->CreateRenderPass(config);
 
 		// load our shaders
-		auto bindata = readFile("triangle.vert.spv");
+		auto bindata = readFile("shaders/Vulkan/triangle.vert.spv");
 		vertexShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
-		bindata = readFile("triangle.frag.spv");
+		bindata = readFile("shaders/Vulkan/triangle.frag.spv");
 		fragmentShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
 
 		uniformBuffer = device->CreateBuffer({
