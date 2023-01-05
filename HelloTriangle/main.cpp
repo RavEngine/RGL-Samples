@@ -66,7 +66,7 @@ struct HelloWorld : public AppBase {
 	}
 	void init(int argc, char** argv) final {
 		RGL::InitOptions options{
-			.api = RGL::API::Vulkan,
+			.api = RGL::API::PlatformDefault,
 			.appName = SampleName(),
 			.engineName = "RGLSampleFramework",
 			.appVersion = {0,0,0,1},
