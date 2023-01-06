@@ -221,15 +221,17 @@ struct HelloWorld : public AppBase {
 				.vertexBuffer = vertexBuffer,
 				.offset = 0,
 			},
-			.numVertices = 3,
-			.viewport = {
+			.numVertices = 3,			
+		};
+
+		commandBuffer->SetViewport({
 				.width = static_cast<float>(nextImgSize.width),
 				.height = static_cast<float>(nextImgSize.height),
-			},
-			.scissor = {
+			});
+		commandBuffer->SetScissor({
 				.extent = {nextImgSize.width, nextImgSize.height}
-			}
-		};
+		});
+
 		commandBuffer->BindPipeline(renderPipeline, bindConfig);
 		commandBuffer->End();
 		
