@@ -215,14 +215,11 @@ struct HelloWorld : public AppBase {
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
 
-		RGL::BindPipelineConfig bindConfig{
-			.targetFramebuffer = nextimg,
-			.buffers = {
-				.vertexBuffer = vertexBuffer,
-				.offset = 0,
-			},
-			.numVertices = 3,			
-		};
+		
+		commandBuffer->BeginRendering({
+			.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+			.targetFramebuffer = nextimg
+		});
 
 		commandBuffer->SetViewport({
 				.width = static_cast<float>(nextImgSize.width),
@@ -230,9 +227,17 @@ struct HelloWorld : public AppBase {
 			});
 		commandBuffer->SetScissor({
 				.extent = {nextImgSize.width, nextImgSize.height}
-		});
+			});
 
-		commandBuffer->BindPipeline(renderPipeline, bindConfig);
+		commandBuffer->BindPipeline(renderPipeline);
+
+		commandBuffer->BindBuffer({
+			.vertexBuffer = vertexBuffer,
+			.offset = 0
+		});
+		commandBuffer->Draw(3);
+
+		commandBuffer->EndRendering();
 		commandBuffer->End();
 		
 		RGL::CommitConfig commitconfig{
