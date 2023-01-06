@@ -231,10 +231,7 @@ struct HelloWorld : public AppBase {
 
 		commandBuffer->BindPipeline(renderPipeline);
 
-		commandBuffer->BindBuffer({
-			.vertexBuffer = vertexBuffer,
-			.offset = 0
-		});
+		commandBuffer->BindBuffer(vertexBuffer,0);
 		commandBuffer->Draw(3);
 
 		commandBuffer->EndRendering();
