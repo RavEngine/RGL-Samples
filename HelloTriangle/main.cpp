@@ -19,7 +19,6 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::IDevice> device;
 	std::shared_ptr<RGL::ISurface> surface;
 	std::shared_ptr<RGL::ISwapchain> swapchain;
-	std::shared_ptr<RGL::IRenderPass> renderPass;
 	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
 	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
 	std::shared_ptr<RGL::IBuffer> uniformBuffer, vertexBuffer;
@@ -66,7 +65,7 @@ struct HelloWorld : public AppBase {
 	}
 	void init(int argc, char** argv) final {
 		RGL::InitOptions options{
-			.api = RGL::API::PlatformDefault,
+			.api = RGL::API::Vulkan,
 			.appName = SampleName(),
 			.engineName = "RGLSampleFramework",
 			.appVersion = {0,0,0,1},
@@ -105,24 +104,6 @@ struct HelloWorld : public AppBase {
 		swapchainFence = device->CreateFence(true);  // create it already signaled, so that we won't block forever waiting for a render that won't happen on the first call to tick
 		imageAvailableSemaphore = device->CreateSemaphore();
 		renderCompleteSemaphore = device->CreateSemaphore();
-
-		// create a renderpass
-		RGL::RenderPassConfig config{
-			.attachments = {
-				{
-					.format = RGL::TextureFormat::BGRA8_Unorm,
-					.loadOp = RGL::LoadAccessOperation::Clear,
-					.storeOp = RGL::StoreAccessOperation::Store,
-				}
-			},
-			.subpasses = {
-				{
-					.type = decltype(config)::SubpassDesc::Type::Graphics,
-					.colorAttachmentIndices = {0},
-				}
-			}
-		};
-		renderPass = device->CreateRenderPass(config);
 
 		// load our shaders
 		auto bindata = readFile("shaders/Vulkan/triangle.vert.spv");
@@ -203,10 +184,13 @@ struct HelloWorld : public AppBase {
 				.windingOrder = decltype(rpd)::RasterizerConfig::WindingOrder::Counterclockwise,
 			},
 			.colorBlendConfig{
-				.attachments = {{}}	// default init one attachment to match the attachment earlier
+				.attachments = {
+					{
+						.format = RGL::TextureFormat::BGRA8_Unorm	// specify attachment data
+					}
+				}
 			},
 			.pipelineLayout = renderPipelineLayout,
-			.renderpass = renderPass,
 			.subpassIndex = 0
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
@@ -281,7 +265,6 @@ struct HelloWorld : public AppBase {
 
 		renderPipeline.reset();
 		renderPipelineLayout.reset();
-		renderPass.reset();
 		renderCompleteSemaphore.reset();
 		imageAvailableSemaphore.reset();
 		swapchainFence.reset();
