@@ -138,7 +138,7 @@ struct HelloWorld : public AppBase {
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
 		// set the layout's dimensions and binding position
-		renderPipelineLayout->SetLayout({ uniformBuffer, 0, ubo });	//TODO: implement IBuffer
+		renderPipelineLayout->SetLayout({ uniformBuffer, 0, ubo, { {.size_bytes = sizeof(decltype(ubo.time)), .n_register = 0}}});	//TODO: implement IBuffer
 
 		// create a render pipeline
 		RGL::RenderPipelineDescriptor rpd{
@@ -164,12 +164,14 @@ struct HelloWorld : public AppBase {
 						.location = 0,
 						.binding = 0,
 						.offset = offsetof(Vertex,pos),
+						.semantic_name = "POSITION",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
 						.offset = offsetof(Vertex,color),
+						.semantic_name = "COLOR",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					}
 				}
