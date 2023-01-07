@@ -115,11 +115,13 @@ struct HelloWorld : public AppBase {
 
 		uniformBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::UniformBuffer, 
-			ubo
+			sizeof(ubo),
+			ubo,
 		});
 		vertexBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::VertexBuffer,
-			vertices
+			sizeof(Vertex),
+			vertices,
 		});
 		vertexBuffer->SetBufferData({&vertices, sizeof(vertices)});
 
