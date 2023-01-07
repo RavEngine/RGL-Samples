@@ -10,7 +10,6 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <glm/glm.hpp>
-#include <fstream>
 #include <format>
 #include <filesystem>
 #undef CreateSemaphore
@@ -45,27 +44,12 @@ struct HelloWorld : public AppBase {
 		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 	};
 
-	static std::vector<uint8_t> readFile(const std::filesystem::path& filename) {
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-		if (!file.is_open()) {
-			throw std::runtime_error(std::format("failed to open {}", filename.string()));
-		}
-
-		size_t fileSize = (size_t)file.tellg();
-		std::vector<uint8_t> buffer(fileSize);
-		file.seekg(0);
-		file.read((char*)(buffer.data()), fileSize);
-		file.close();
-		return buffer;
-	}
-
 	const char* SampleName() {
 		return "HelloTriangle";
 	}
 	void init(int argc, char** argv) final {
 		RGL::InitOptions options{
-			.api = RGL::API::Vulkan,
+			.api = RGL::API::PlatformDefault,
 			.appName = SampleName(),
 			.engineName = "RGLSampleFramework",
 			.appVersion = {0,0,0,1},
@@ -105,11 +89,29 @@ struct HelloWorld : public AppBase {
 		imageAvailableSemaphore = device->CreateSemaphore();
 		renderCompleteSemaphore = device->CreateSemaphore();
 
+		auto readShaderBinary = [](const std::string& name) {
+			const char* backendPath;
+			const char* extension;
+			switch (RGL::CurrentAPI()) {
+			case RGL::API::Vulkan:
+				backendPath = "Vulkan";
+				extension = ".spv";
+				break;
+			case RGL::API::Direct3D12:
+				backendPath = "Direct3D12";
+				extension = ".cso";
+				break;
+			default:
+				throw std::runtime_error("Shader loading not implemented");
+			}
+			auto file = std::filesystem::path("shaders") / backendPath / (name + extension);
+			return file;
+			
+		};
+
 		// load our shaders
-		auto bindata = readFile("shaders/Vulkan/triangle.vert.spv");
-		vertexShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
-		bindata = readFile("shaders/Vulkan/triangle.frag.spv");
-		fragmentShaderLibrary = device->CreateShaderLibraryFromBytes(bindata);
+		vertexShaderLibrary = device->CreateShaderLibraryFromPath(readShaderBinary("triangle.vert"));
+		fragmentShaderLibrary = device->CreateShaderLibraryFromPath(readShaderBinary("triangle.frag"));
 
 		uniformBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::UniformBuffer, 
