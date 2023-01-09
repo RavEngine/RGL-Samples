@@ -89,7 +89,7 @@ struct HelloWorld : public AppBase {
 		imageAvailableSemaphore = device->CreateSemaphore();
 		renderCompleteSemaphore = device->CreateSemaphore();
 
-		auto readShaderBinary = [](const std::string& name) {
+		auto getShaderPathname = [](const std::string& name) {
 			const char* backendPath;
 			const char* extension;
 			switch (RGL::CurrentAPI()) {
@@ -109,9 +109,14 @@ struct HelloWorld : public AppBase {
 			
 		};
 
+#if __APPLE__
+        vertexShaderLibrary = device->CreateShaderLibraryFromName("triangle_vert");
+        fragmentShaderLibrary = device->CreateShaderLibraryFromName("triangle_frag");
+#else
 		// load our shaders
-		vertexShaderLibrary = device->CreateShaderLibraryFromPath(readShaderBinary("triangle.vert"));
-		fragmentShaderLibrary = device->CreateShaderLibraryFromPath(readShaderBinary("triangle.frag"));
+		vertexShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.vert"));
+		fragmentShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.frag"));
+#endif
 
 		uniformBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::UniformBuffer, 
