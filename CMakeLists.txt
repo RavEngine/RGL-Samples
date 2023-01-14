@@ -83,7 +83,12 @@ macro(add_sample dir)
 		if(RGL_MTL_AVAILABLE)
 			shader_compile("${FILE}" "vertex" "Metal" "metal" "")
 			target_sources(${dir} PUBLIC ${outname})
-			set_source_files_properties(${outname} PROPERTIES GENERATED TRUE)
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				HEADER_FILE_ONLY OFF
+				LANGUAGE METAL
+				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
+			)
 		endif()
 	endforeach()
 	file(GLOB all_frags "${dir}/*.frag")
@@ -97,7 +102,12 @@ macro(add_sample dir)
 		if(RGL_MTL_AVAILABLE)
 			shader_compile("${FILE}" "fragment" "Metal" "metal" "")
 			target_sources(${dir} PUBLIC ${outname})
-			set_source_files_properties(${outname} PROPERTIES GENERATED TRUE)
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				HEADER_FILE_ONLY OFF
+				LANGUAGE METAL
+				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
+			)
 		endif()
 	endforeach()
 
