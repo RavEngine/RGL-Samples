@@ -51,7 +51,7 @@ macro(add_sample dir)
 	set_target_properties(${dir} PROPERTIES
 		MACOSX_BUNDLE TRUE
 		XCODE_GENERATE_SCHEME ON
-		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/"
+		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>"
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
 
@@ -78,7 +78,13 @@ macro(add_sample dir)
 			shader_compile("${FILE}" "vertex" "Vulkan" "spv" "")
 		endif()
 		if(RGL_DX12_AVAILABLE)
-			shader_compile("${FILE}" "vertex" "Direct3D12" "cso" "--binary")
+			shader_compile("${FILE}" "vertex" "Direct3D12" "hlsl" "")
+			target_sources(${dir} PUBLIC ${outname})
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				VS_SHADER_MODEL "5.1"
+				VS_SHADER_TYPE "Vertex"
+			)
 		endif()
 		if(RGL_MTL_AVAILABLE)
 			shader_compile("${FILE}" "vertex" "Metal" "metal" "")
@@ -97,7 +103,13 @@ macro(add_sample dir)
 			shader_compile("${FILE}" "fragment" "Vulkan" "spv" "")
 		endif()
 		if(RGL_DX12_AVAILABLE)
-			shader_compile("${FILE}" "fragment" "Direct3D12" "cso" "--binary")
+			shader_compile("${FILE}" "fragment" "Direct3D12" "hlsl" "")
+			target_sources(${dir} PUBLIC ${outname})
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				VS_SHADER_MODEL "5.1"
+				VS_SHADER_TYPE "Pixel"
+			)
 		endif()
 		if(RGL_MTL_AVAILABLE)
 			shader_compile("${FILE}" "fragment" "Metal" "metal" "")

@@ -100,6 +100,7 @@ struct HelloWorld : public AppBase {
 			case RGL::API::Direct3D12:
 				backendPath = "Direct3D12";
 				extension = ".cso";
+				return std::filesystem::path(name + extension);
 				break;
 			default:
 				throw std::runtime_error("Shader loading not implemented");
@@ -169,14 +170,14 @@ struct HelloWorld : public AppBase {
 						.location = 0,
 						.binding = 0,
 						.offset = offsetof(Vertex,pos),
-						.semantic_name = "POSITION",
+						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
 						.offset = offsetof(Vertex,color),
-						.semantic_name = "COLOR",
+						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					}
 				}
