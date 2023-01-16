@@ -64,6 +64,9 @@ struct HelloWorld : public AppBase {
 		device = RGL::IDevice::CreateSystemDefaultDevice();
 		std::cout << device->GetBrandString() << std::endl;
 
+		// create the main queue
+		commandQueue = device->CreateCommandQueue(RGL::QueueType::AllCommands);
+
 		// create a surface to render to
 		// this requires some platform-specific code
 		SDL_SysWMinfo wmi;
@@ -84,8 +87,9 @@ struct HelloWorld : public AppBase {
 		SDL_GetWindowSizeInPixels(window, &width, &height);
 		
 		// create a swapchain for the surface
-		swapchain = device->CreateSwapchain(surface,width,height);
-		swapchainFence = device->CreateFence(true);  // create it already signaled, so that we won't block forever waiting for a render that won't happen on the first call to tick
+		// provide it the queue which will be presented on
+		swapchain = device->CreateSwapchain(surface, commandQueue, width,height);
+		swapchainFence = device->CreateFence(true); 
 		imageAvailableSemaphore = device->CreateSemaphore();
 		renderCompleteSemaphore = device->CreateSemaphore();
 
@@ -96,6 +100,7 @@ struct HelloWorld : public AppBase {
 			case RGL::API::Vulkan:
 				backendPath = "Vulkan";
 				extension = ".spv";
+				return std::filesystem::path("../shaders") / backendPath / (name + extension);
 				break;
 			case RGL::API::Direct3D12:
 				backendPath = "Direct3D12";
@@ -105,8 +110,6 @@ struct HelloWorld : public AppBase {
 			default:
 				throw std::runtime_error("Shader loading not implemented");
 			}
-			auto file = std::filesystem::path("shaders") / backendPath / (name + extension);
-			return file;
 			
 		};
 
@@ -208,7 +211,6 @@ struct HelloWorld : public AppBase {
 		renderPipeline = device->CreateRenderPipeline(rpd);
 
 		// create command buffer
-		commandQueue = device->CreateCommandQueue(RGL::QueueType::AllCommands);
 		commandBuffer = commandQueue->CreateCommandBuffer();
 	}
 	void tick() final {
