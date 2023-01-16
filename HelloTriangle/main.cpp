@@ -262,10 +262,12 @@ struct HelloWorld : public AppBase {
 	}
 
 	void sizechanged(int width, int height) final {
+		commandQueue->WaitUntilCompleted();
 		swapchain->Resize(width, height);
 	}
 
 	void shutdown() final {
+		commandQueue->WaitUntilCompleted();
 		device->BlockUntilIdle();
 
 		// need to null these out before shutting down, otherwise validation errors will occur
