@@ -3,6 +3,8 @@
 cd ..
 mkdir build
 cd build
-cmake ..
-cd ..
+mkdir win
+cd win
+cmake ..\..
+cd ..\..
 cd config

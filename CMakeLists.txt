@@ -34,9 +34,17 @@ add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 # App framework using SDL2
 add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp")
 target_include_directories(${PROJECT_NAME}-Common PUBLIC "./" PRIVATE "deps/SDL2/include")
+
+if (CMAKE_SYSTEM_NAME MATCHES WindowsStore)
+	add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+	add_definitions(-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+else()
+	set(SDLMAIN_LIB "SDL2main")
+endif()
+
 target_link_libraries(${PROJECT_NAME}-Common 
 	PUBLIC
-		SDL2-static SDL2main
+		SDL2-static ${SDLMAIN_LIB}
 		RGL
 		glm
 )
@@ -133,7 +141,7 @@ endmacro()
 add_sample(HelloTriangle)
 
 set_target_properties(
-	"SDL2main"
+	${SDLMAIN_LIB}
 	"SDL2-static"
 	"sdl_headers_copy"
 	"RGL-Samples-Common"

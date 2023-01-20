@@ -75,7 +75,9 @@ struct HelloWorld : public AppBase {
 			throw std::runtime_error("Cannot get native window information");
 		}
 		surface = RGL::CreateSurfaceFromPlatformHandle(
-#ifdef _WIN32
+#ifdef _UWP
+			&wmi.info.winrt.window,
+#elif _WIN32
 			&wmi.info.win.window,
 #else
 			wmi.info.cocoa.window,
