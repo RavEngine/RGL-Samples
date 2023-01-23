@@ -20,7 +20,7 @@ struct HelloWorld : public AppBase {
 	std::shared_ptr<RGL::ISwapchain> swapchain;
 	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
 	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-	std::shared_ptr<RGL::IBuffer> uniformBuffer, vertexBuffer;
+	std::shared_ptr<RGL::IBuffer> vertexBuffer;
 
 	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
 
@@ -75,7 +75,7 @@ struct HelloWorld : public AppBase {
 			throw std::runtime_error("Cannot get native window information");
 		}
 		surface = RGL::CreateSurfaceFromPlatformHandle(
-#ifdef _UWP
+#if _UWP
 			&wmi.info.winrt.window,
 #elif _WIN32
 			&wmi.info.win.window,
@@ -124,11 +124,6 @@ struct HelloWorld : public AppBase {
 		fragmentShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.frag"));
 #endif
 
-		uniformBuffer = device->CreateBuffer({
-			RGL::BufferConfig::Type::UniformBuffer, 
-			sizeof(ubo),
-			ubo,
-		});
 		vertexBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::VertexBuffer,
 			sizeof(Vertex),
@@ -138,18 +133,10 @@ struct HelloWorld : public AppBase {
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
-			.bindings = {
-				{
-					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::UniformBuffer,
-					.descriptorCount = 1,
-					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex
-				}
-			}
+			.constants = {{ ubo, 0}}
 		};
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
-		// set the layout's dimensions and binding position
-		renderPipelineLayout->SetLayout({ uniformBuffer, 0, ubo, { {.size_bytes = sizeof(decltype(ubo.time)), .n_register = 0}}});	//TODO: implement IBuffer
 
 		// create a render pipeline
 		RGL::RenderPipelineDescriptor rpd{
@@ -217,7 +204,6 @@ struct HelloWorld : public AppBase {
 	}
 	void tick() final {
 		ubo.time++;
-		uniformBuffer->UpdateBufferData({&ubo, sizeof(ubo)});
 		
 		RGL::SwapchainPresentConfig presentConfig{
 			.waitSemaphores = {&renderCompleteSemaphore,1}
@@ -246,6 +232,7 @@ struct HelloWorld : public AppBase {
 			});
 
 		commandBuffer->BindPipeline(renderPipeline);
+		commandBuffer->SetVertexBytes({ &ubo, 1 }, 0);
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
 		commandBuffer->Draw(3);
@@ -279,7 +266,6 @@ struct HelloWorld : public AppBase {
 		commandBuffer.reset();
 		commandQueue.reset();
 
-		uniformBuffer.reset();
 		vertexBuffer.reset();
 
 		vertexShaderLibrary.reset();

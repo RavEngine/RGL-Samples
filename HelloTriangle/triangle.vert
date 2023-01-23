@@ -1,6 +1,6 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject{
+layout(push_constant) uniform UniformBufferObject{
     float time;
 } ubo;
 
