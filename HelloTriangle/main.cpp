@@ -129,7 +129,7 @@ struct HelloWorld : public AppBase {
 			sizeof(Vertex),
 			vertices,
 		});
-		vertexBuffer->SetBufferData({&vertices, sizeof(vertices)});
+		vertexBuffer->SetBufferData(vertices);
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
