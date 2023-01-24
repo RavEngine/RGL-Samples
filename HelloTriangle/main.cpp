@@ -232,7 +232,7 @@ struct HelloWorld : public AppBase {
 			});
 
 		commandBuffer->BindPipeline(renderPipeline);
-		commandBuffer->SetVertexBytes({ &ubo, 1 }, 0);
+		commandBuffer->SetVertexBytes(ubo, 0);
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
 		commandBuffer->Draw(3);

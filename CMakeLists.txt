@@ -102,6 +102,7 @@ macro(add_sample dir)
 				HEADER_FILE_ONLY OFF
 				LANGUAGE METAL
 				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
+                COMPILE_FLAGS "-gline-tables-only -frecord-sources" # enable shader source debugging
 			)
 		endif()
 	endforeach()
@@ -127,6 +128,7 @@ macro(add_sample dir)
 				HEADER_FILE_ONLY OFF
 				LANGUAGE METAL
 				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
+                COMPILE_FLAGS "-gline-tables-only -frecord-sources" # enable shader source debugging
 			)
 		endif()
 	endforeach()
