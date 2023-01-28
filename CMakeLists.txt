@@ -80,6 +80,14 @@ macro(add_sample dir)
 	endmacro()
 
 	file(GLOB all_shaders "${dir}/*.vert" "${dir}/*.frag")
+
+	target_sources(${dir} PUBLIC ${all_shaders})
+	set_source_files_properties(${all_shaders} PROPERTIES
+		HEADER_FILE_ONLY ON
+		XCODE_EXPLICIT_FILE_TYPE "sourcecode.glsl"
+	)
+	source_group(Shaders FILES ${all_shaders})
+
 	file(GLOB all_verts "${dir}/*.vert")
 	foreach(FILE ${all_verts})
 		if(RGL_VK_AVAILABLE)
@@ -140,7 +148,7 @@ macro(add_sample dir)
 	add_dependencies(${dir}_CompileShaders rglc)
 endmacro()
 
-add_sample(HelloTriangle)
+add_sample(01-HelloTriangle)
 
 set_target_properties(
 	${SDLMAIN_LIB}

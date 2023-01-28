@@ -19,6 +19,7 @@ public:
 	virtual void tick() = 0;
 	virtual void shutdown() = 0;
 	virtual void sizechanged(int width, int height) {}
+    float wmScaleFactor = 1;
 };
 
 #define START_SAMPLE(name) int main(int argc, char** argv){ auto app = std::make_unique< name >(); return app->run(argc, argv); }

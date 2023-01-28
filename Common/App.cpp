@@ -1,5 +1,6 @@
 #include "App.hpp"
 #include <SDL.h>
+#include <SDL_syswm.h>
 #include <SDL_main.h>
 #include <iostream>
 #include <array>
@@ -39,6 +40,14 @@ int AppBase::run(int argc, char** argv) {
 		SDL_GetErrorMsg(buf, 512);
 		cerr << "Failed to create window: " << buf << endl;
 	}
+#if __APPLE__
+    {
+        int dw, h;
+        SDL_Metal_GetDrawableSize(window, &h, &h);
+        SDL_GetWindowSize(window, &dw, &dw);
+        wmScaleFactor = h / dw;
+    }
+#endif
 
 	init(argc, argv);
 
@@ -55,7 +64,7 @@ int AppBase::run(int argc, char** argv) {
 					switch (wev.event) {
 						case SDL_WINDOWEVENT_RESIZED:
 						case SDL_WINDOWEVENT_SIZE_CHANGED:
-							sizechanged(wev.data1, wev.data2);
+							sizechanged(wev.data1 * wmScaleFactor, wev.data2 * wmScaleFactor);
 							break;
 					}
 				}
