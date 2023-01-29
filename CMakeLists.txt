@@ -30,9 +30,11 @@ add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
+add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 
 # App framework using SDL2
-add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp")
+add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp" "Common/ExampleFramework.hpp" "Common/ExampleFramework.cpp")
+target_compile_features(${PROJECT_NAME}-Common PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME}-Common PUBLIC "./" PRIVATE "deps/SDL2/include")
 
 if (CMAKE_SYSTEM_NAME MATCHES WindowsStore)
@@ -47,6 +49,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 		SDL2-static ${SDLMAIN_LIB}
 		RGL
 		glm
+        fmt
 )
 
 macro(add_sample dir)
@@ -149,6 +152,7 @@ macro(add_sample dir)
 endmacro()
 
 add_sample(01-HelloTriangle)
+add_sample(02-Cubes)
 
 set_target_properties(
 	${SDLMAIN_LIB}
