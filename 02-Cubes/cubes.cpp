@@ -11,28 +11,66 @@
 #undef CreateSemaphore
 
 struct Cubes : public ExampleFramework {
-	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
-	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-	std::shared_ptr<RGL::IBuffer> vertexBuffer;
-
-	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
-
-	std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
-
-	struct Vertex {
-		glm::vec2 pos;
-		glm::vec3 color;
+    std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
+    std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
+    std::shared_ptr<RGL::IBuffer> vertexBuffer;
+    
+    std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
+    
+    std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
+    
+    struct Vertex {
+        glm::vec3 pos;
+        glm::vec3 normal;
+        glm::vec2 uv;
+    };
+    
+    struct UniformBufferObject {
+        float time = 0;
+    } ubo;
+    
+    constexpr static Vertex vertices[] = {
+        {{ -1.0,  1.0,  1.0}, { 0.0,  0.0,  1.0}, {0, 0 }},
+        {{ 1.0,  1.0,  1.0}, { 0.0,  0.0,  1.0}, {1, 0 }},
+        {{ -1.0, -1.0,  1.0}, { 0.0,  0.0,  1.0}, {0, 1 }},
+        {{ 1.0, -1.0,  1.0}, { 0.0,  0.0,  1.0}, {1, 1 }},
+        {{ -1.0, 1.0, -1.0}, { 0.0,  0.0, -1.0}, {0, 0 }},
+        {{ 1.0,  1.0, -1.0}, { 0.0,  0.0, -1.0}, {1, 0 }},
+        {{ -1.0, -1.0, -1.0}, { 0.0,  0.0, -1.0}, {0, 1 }},
+        {{ 1.0, -1.0, -1.0}, { 0.0,  0.0, -1.0}, {1, 1 }},
+        {{ -1.0, 1.0,  1.0}, { 0.0,  1.0,  0.0}, {0, 0 }},
+        {{ 1.0,  1.0,  1.0}, { 0.0,  1.0,  0.0}, {1, 0 }},
+        {{ -1.0, 1.0, -1.0}, { 0.0,  1.0,  0.0}, {0, 1 }},
+        {{ 1.0,  1.0, -1.0}, { 0.0,  1.0,  0.0}, {1, 1 }},
+        {{ -1.0, -1.0,  1.0}, { 0.0, -1.0,  0.0}, {0, 0 }},
+        {{ 1.0, -1.0,  1.0}, { 0.0, -1.0,  0.0}, {1, 0 }},
+        {{ -1.0, -1.0, -1.0}, { 0.0, -1.0,  0.0}, {0, 1 }},
+        {{ 1.0, -1.0, -1.0}, { 0.0, -1.0,  0.0}, {1, 1 }},
+        {{ 1.0, -1.0,  1.0}, { 1.0,  0.0,  0.0}, {0, 0 }},
+        {{ 1.0,  1.0,  1.0}, { 1.0,  0.0,  0.0}, {1, 0 }},
+        {{ 1.0, -1.0, -1.0}, { 1.0,  0.0,  0.0}, {0, 1 }},
+        {{ 1.0,  1.0, -1.0}, { 1.0,  0.0,  0.0}, {1, 1 }},
+        {{ -1.0, -1.0,  1.0}, { -1.0,  0.0,  0.0}, {0, 0 }},
+        {{ -1.0, 1.0,  1.0}, { -1.0,  0.0,  0.0}, {1, 0 }},
+        {{ -1.0, -1.0, -1.0}, { -1.0,  0.0,  0.0}, {0, 1 }},
+        {{ -1.0, 1.0, -1.0}, { -1.0,  0.0,  0.0}, {1, 1 }},
 	};
+    constexpr static uint32_t indices[] = {
+        0,  2,  1,
+        1,  2,  3,
+        4,  5,  6,
+        5,  7,  6,
 
-	struct UniformBufferObject {
-		float time = 0;
-	} ubo;
+        8, 10,  9,
+        9, 10, 11,
+       12, 13, 14,
+       13, 15, 14,
 
-	constexpr static Vertex vertices[] = {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-	};
+       16, 18, 17,
+       17, 18, 19,
+       20, 21, 22,
+       21, 23, 22,
+    };
 
 	const char* SampleName() {
 		return "Cubes";
@@ -81,15 +119,22 @@ struct Cubes : public ExampleFramework {
 						.binding = 0,
 						.offset = offsetof(Vertex,pos),
 						.semantic_name = "TEXCOORD",
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
-						.offset = offsetof(Vertex,color),
+						.offset = offsetof(Vertex,normal),
 						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-					}
+					},
+                    {
+                        .location = 2,
+                        .binding = 0,
+                        .offset = offsetof(Vertex,uv),
+                        .semantic_name = "TEXCOORD",
+                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+                    }
 				}
 			},
 			.inputAssembly = {
@@ -153,7 +198,7 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->SetVertexBytes(ubo, 0);
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
-		commandBuffer->Draw(3);
+		commandBuffer->Draw(std::size(indices)/3);
 
 		commandBuffer->EndRendering();
 		commandBuffer->End();

@@ -235,7 +235,7 @@ struct HelloWorld : public AppBase {
 		commandBuffer->SetVertexBytes(ubo, 0);
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
-		commandBuffer->Draw(3);
+		commandBuffer->Draw(std::size(vertices));
 
 		commandBuffer->EndRendering();
 		commandBuffer->End();
