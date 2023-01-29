@@ -80,7 +80,11 @@ cont:
 }
 
 void ExampleFramework::shutdown(){
+    commandQueue->WaitUntilCompleted();
+    device->BlockUntilIdle();
+    
     sampleshutdown();
+    
     renderCompleteSemaphore.reset();
     imageAvailableSemaphore.reset();
     swapchainFence.reset();

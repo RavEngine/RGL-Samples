@@ -174,12 +174,6 @@ struct Cubes : public ExampleFramework {
 	}
 
 	void sampleshutdown() final {
-		commandQueue->WaitUntilCompleted();
-		device->BlockUntilIdle();
-
-		// need to null these out before shutting down, otherwise validation errors will occur
-		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
-		// to ensure all references are cleaned up
 
 		commandBuffer.reset();
 		commandQueue.reset();
