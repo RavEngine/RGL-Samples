@@ -61,8 +61,12 @@ cont:
         &wmi.info.winrt.window,
 #elif _WIN32
         &wmi.info.win.window,
+#elif TARGET_OS_IPHONE
+        &wmi.info.uikit.window,
+#elif __APPLE__
+        &wmi.info.cocoa.window,
 #else
-        wmi.info.cocoa.window,
+#error Unknown platform
 #endif
         true
     );

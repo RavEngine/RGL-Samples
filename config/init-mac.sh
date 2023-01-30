@@ -1,4 +1,5 @@
 mkdir ../build
-cd ../build
-cmake -G "Xcode" ..
+mkdir ../build/mac
+cd ../build/mac
+cmake -G "Xcode" ../..
 
