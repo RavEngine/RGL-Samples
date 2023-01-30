@@ -31,6 +31,7 @@ add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
+add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
 
 # App framework using SDL2
 add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp" "Common/ExampleFramework.hpp" "Common/ExampleFramework.cpp")
@@ -50,6 +51,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 		RGL
 		glm
         fmt
+		stb_image
 )
 
 macro(add_sample dir)

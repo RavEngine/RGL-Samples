@@ -63,9 +63,9 @@ cont:
 #elif _WIN32
         &wmi.info.win.window,
 #elif TARGET_OS_IPHONE
-        &wmi.info.uikit.window,
+        wmi.info.uikit.window,
 #elif __APPLE__
-        &wmi.info.cocoa.window,
+        wmi.info.cocoa.window,
 #else
 #error Unknown platform
 #endif
