@@ -28,10 +28,32 @@ set(SDL_HAPTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
 set(SDL_JOYSTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
 add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 
-add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
+
+
+if(CMAKE_CROSSCOMPILING)
+	set(RGL_ENABLE_RGLC OFF CACHE INTERNAL "")
+	set(TOOLS_DIR ${CMAKE_BINARY_DIR}/host-tools CACHE INTERNAL "")
+	file(MAKE_DIRECTORY ${TOOLS_DIR})
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${LINUX_HOST_CC} ${LINUX_HOST_CXX} -DCMAKE_BUILD_TYPE=Release ${CMAKE_CURRENT_SOURCE_DIR}
+		WORKING_DIRECTORY ${TOOLS_DIR}
+	)
+	set(rglc_path "${TOOLS_DIR}/Release/rglc")
+	add_custom_command(
+		PRE_BUILD
+		OUTPUT "${rglc_path}" 
+		COMMAND ${CMAKE_COMMAND} --build . --config Release --target rglc
+		WORKING_DIRECTORY "${TOOLS_DIR}"
+		VERBATIM
+	)
+	add_custom_target("rglc" DEPENDS "${rglc_path}")
+endif()
+add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
+
+
 
 # App framework using SDL2
 add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp" "Common/ExampleFramework.hpp" "Common/ExampleFramework.cpp")
