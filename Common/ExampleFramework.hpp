@@ -49,10 +49,12 @@ struct Camera{
 // all examples aside from HelloTriangle use this for convenience
 struct ExampleFramework : public AppBase{
     void init(int argc, char** argv) final;
+    void sizechanged(int, int) final;
     void shutdown() final;
     
     virtual void sampleinit(int argc, char** argv) = 0;
     virtual void sampleshutdown() = 0;
+    virtual void onresize(int, int) {};
     
     // things required by all RGL samples
     std::shared_ptr<RGL::IDevice> device;

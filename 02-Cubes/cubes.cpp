@@ -105,12 +105,10 @@ struct Cubes : public ExampleFramework {
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
 					.shaderModule = vertexShaderLibrary,
-					.entryPoint = "main"
 				},
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
 					.shaderModule = fragmentShaderLibrary,
-					.entryPoint = "main"
 				}
 			},
 			.vertexConfig = {
@@ -123,21 +121,18 @@ struct Cubes : public ExampleFramework {
 						.location = 0,
 						.binding = 0,
 						.offset = offsetof(Vertex,pos),
-						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
 						.offset = offsetof(Vertex,normal),
-						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					},
                     {
                         .location = 2,
                         .binding = 0,
                         .offset = offsetof(Vertex,uv),
-                        .semantic_name = "TEXCOORD",
                         .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
                     }
 				}
@@ -221,17 +216,13 @@ struct Cubes : public ExampleFramework {
 		swapchain->Present(presentConfig);
 	}
 
-	void sizechanged(int width, int height) final {
-		commandQueue->WaitUntilCompleted();
-		swapchain->Resize(width, height);
-	}
-
 	void sampleshutdown() final {
 
 		commandBuffer.reset();
 		commandQueue.reset();
 
 		vertexBuffer.reset();
+		indexBuffer.reset();
 
 		vertexShaderLibrary.reset();
 		fragmentShaderLibrary.reset();

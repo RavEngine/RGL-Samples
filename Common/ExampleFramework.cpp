@@ -4,6 +4,7 @@
 #include <fmt/format.h>
 #include <unordered_map>
 #include <iostream>
+#undef CreateSemaphore
 
 void ExampleFramework::init(int argc, char **argv){
     RGL::API api = RGL::API::PlatformDefault;
@@ -16,8 +17,8 @@ void ExampleFramework::init(int argc, char **argv){
         
         const std::unordered_map<std::string_view, RGL::API> apis{
             {"metal", decltype(apis)::value_type::second_type::Metal},
-            {"D3D12", decltype(apis)::value_type::second_type::Direct3D12},
-            {"Vulkan", decltype(apis)::value_type::second_type::Vulkan},
+            {"d3d12", decltype(apis)::value_type::second_type::Direct3D12},
+            {"vulkan", decltype(apis)::value_type::second_type::Vulkan},
         };
         
         auto it = apis.find(backend);
@@ -81,6 +82,15 @@ cont:
     renderCompleteSemaphore = device->CreateSemaphore();
     
     sampleinit(argc, argv);
+}
+
+void ExampleFramework::sizechanged(int width, int height)
+{
+    this->width = width;
+    this->height = height;
+    commandQueue->WaitUntilCompleted();
+    swapchain->Resize(width, height);
+    onresize(width,height);
 }
 
 void ExampleFramework::shutdown(){

@@ -144,12 +144,10 @@ struct HelloWorld : public AppBase {
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
 					.shaderModule = vertexShaderLibrary,
-					.entryPoint = "main"
 				},
 				{
 					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
 					.shaderModule = fragmentShaderLibrary,
-					.entryPoint = "main"
 				}
 			},
 			.vertexConfig = {
@@ -162,14 +160,12 @@ struct HelloWorld : public AppBase {
 						.location = 0,
 						.binding = 0,
 						.offset = offsetof(Vertex,pos),
-						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
 						.offset = offsetof(Vertex,color),
-						.semantic_name = "TEXCOORD",
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					}
 				}
