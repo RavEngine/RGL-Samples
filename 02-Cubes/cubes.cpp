@@ -13,7 +13,7 @@
 struct Cubes : public ExampleFramework {
     std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
     std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-    std::shared_ptr<RGL::IBuffer> vertexBuffer;
+    std::shared_ptr<RGL::IBuffer> vertexBuffer, indexBuffer;
     
     std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
     
@@ -86,6 +86,13 @@ struct Cubes : public ExampleFramework {
 			vertices,
 		});
 		vertexBuffer->SetBufferData(vertices);
+        
+        indexBuffer = device->CreateBuffer({
+            RGL::BufferConfig::Type::IndexBuffer,
+            sizeof(indices[0]),
+            indices,
+        });
+        indexBuffer->SetBufferData(indices);
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
@@ -198,7 +205,8 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->SetVertexBytes(ubo, 0);
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
-		commandBuffer->Draw(std::size(indices)/3);
+        commandBuffer->SetIndexBuffer(indexBuffer);
+		commandBuffer->DrawIndexed(std::size(indices));
 
 		commandBuffer->EndRendering();
 		commandBuffer->End();
