@@ -9,7 +9,13 @@
 void ExampleFramework::init(int argc, char **argv){
     RGL::API api = RGL::API::PlatformDefault;
     {
+#if _UWP
+        size_t n_elt;
+        char* envv;
+        _dupenv_s(&envv, &n_elt, "RGL_BACKEND");
+#else
         auto envv = std::getenv("RGL_BACKEND");
+#endif
         if (envv == nullptr){
             goto cont;
         }

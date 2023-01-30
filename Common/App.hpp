@@ -22,4 +22,16 @@ public:
     float wmScaleFactor = 1;
 };
 
+#if _UWP
+// UWP startup requires extra effort
+#undef main
+#define START_SAMPLE(APP) \
+int DoProgram(int argc, char** argv){\
+auto a = std::make_unique<APP>(); return a->run(argc, argv);\
+}\
+int main(int argc, char** argv) { \
+	return SDL_WinRTRunApp(DoProgram, NULL);\
+}
+#else
 #define START_SAMPLE(name) int main(int argc, char** argv){ auto app = std::make_unique< name >(); return app->run(argc, argv); }
+#endif
