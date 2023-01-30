@@ -41,7 +41,10 @@ if(CMAKE_CROSSCOMPILING)
 		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${LINUX_HOST_CC} ${LINUX_HOST_CXX} -DCMAKE_BUILD_TYPE=Release ${CMAKE_CURRENT_SOURCE_DIR}
 		WORKING_DIRECTORY ${TOOLS_DIR}
 	)
-	set(rglc_path "${TOOLS_DIR}/Release/rglc")
+	if(MSVC)
+		set(rglc_ext ".exe")
+	endif()
+	set(rglc_path "${TOOLS_DIR}/Release/rglc${rglc_ext}")
 	add_custom_command(
 		PRE_BUILD
 		OUTPUT "${rglc_path}" 
@@ -79,7 +82,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 macro(add_sample dir)
 	set(dir "${CMAKE_CURRENT_LIST_DIR}/${dir}")
 	file(GLOB_RECURSE SOURCES "${dir}/*.cpp" "${dir}/*.hpp" "${dir}/*.h")
-	add_executable(${dir} ${SOURCES})
+	add_executable(${dir} ${SOURCES} "iosLaunchScreen.storyboard") 
 	target_compile_features(${dir} PRIVATE cxx_std_20)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "${dir}")
 
@@ -87,6 +90,10 @@ macro(add_sample dir)
 		MACOSX_BUNDLE TRUE
 		XCODE_GENERATE_SCHEME ON
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>"
+		XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.ravbug.${APPNAME}"		# with templated plist we can set this
+		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.ravbug.${dir}"
+		XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
+		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
 
