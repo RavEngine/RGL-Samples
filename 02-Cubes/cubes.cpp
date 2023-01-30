@@ -5,9 +5,6 @@
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
-#include <glm/glm.hpp>
-#include <format>
-#include <filesystem>
 #undef CreateSemaphore
 
 struct Cubes : public ExampleFramework {
@@ -26,7 +23,8 @@ struct Cubes : public ExampleFramework {
     };
     
     struct UniformBufferObject {
-        float time = 0;
+        glm::mat4 viewProj;
+        
     } ubo;
     
     constexpr static Vertex vertices[] = {
@@ -171,9 +169,11 @@ struct Cubes : public ExampleFramework {
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
+        
+        camera.position.z = 5;
 	}
 	void tick() final {
-		ubo.time++;
+        ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
 		
 		RGL::SwapchainPresentConfig presentConfig{
 			.waitSemaphores = {&renderCompleteSemaphore,1}

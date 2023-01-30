@@ -159,6 +159,7 @@ set_target_properties(
 	"SDL2-static"
 	"sdl_headers_copy"
 	"RGL-Samples-Common"
+    "fmt"
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
 )
