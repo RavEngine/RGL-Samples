@@ -7,6 +7,7 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #undef CreateSemaphore
+#undef LoadImage
 
 struct Cubes : public ExampleFramework {
     std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
@@ -224,6 +225,7 @@ struct Cubes : public ExampleFramework {
 
 	void sampleshutdown() final {
 
+		sampledTexture.reset();
 		commandBuffer.reset();
 		commandQueue.reset();
 

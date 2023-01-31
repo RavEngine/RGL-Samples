@@ -196,6 +196,7 @@ set_target_properties(
 	"sdl_headers_copy"
 	"RGL-Samples-Common"
     "fmt"
+	"stb_image"
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
 )
