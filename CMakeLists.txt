@@ -85,13 +85,15 @@ target_link_libraries(${PROJECT_NAME}-Common
 macro(add_sample dir)
 	set(dir "${CMAKE_CURRENT_LIST_DIR}/${dir}")
 	file(GLOB_RECURSE SOURCES "${dir}/*.cpp" "${dir}/*.hpp" "${dir}/*.h")
-	add_executable(${dir} ${SOURCES} "iosLaunchScreen.storyboard") 
+     file(GLOB_RECURSE RESOURCES "${dir}/*.png")
+	add_executable(${dir} ${SOURCES} ${RESOURCES} "iosLaunchScreen.storyboard")
 	target_compile_features(${dir} PRIVATE cxx_std_20)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "${dir}")
 
 	set_target_properties(${dir} PROPERTIES
 		MACOSX_BUNDLE TRUE
 		XCODE_GENERATE_SCHEME ON
+        RESOURCE "${RESOURCES}"
 		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>"
 		XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.ravbug.${APPNAME}"		# with templated plist we can set this
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.ravbug.${dir}"

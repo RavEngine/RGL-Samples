@@ -4,6 +4,10 @@
 #include <SDL_main.h>
 #include <iostream>
 #include <array>
+#include <filesystem>
+#if __APPLE__
+    #include <CoreFoundation/CFBundle.h>
+#endif
 #include <RGL/RGL.hpp>
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
@@ -50,6 +54,20 @@ int AppBase::run(int argc, char** argv) {
     }
 #endif
 
+#if __APPLE__
+    // set pwd to bundle path
+    CFBundleRef AppBundle = CFBundleGetMainBundle();
+    CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(AppBundle);
+    CFURLRef absoluteResourceURL = CFURLCopyAbsoluteURL(resourcesURL);
+    CFStringRef resourcePath = CFURLCopyPath( absoluteResourceURL);
+
+    string bundlepath = CFStringGetCStringPtr(resourcePath, kCFStringEncodingUTF8);
+    
+    CFRelease(absoluteResourceURL);
+    CFRelease(resourcePath);
+    std::filesystem::current_path(bundlepath);
+#endif
+    
 	init(argc, argv);
 
 	SDL_Event event;

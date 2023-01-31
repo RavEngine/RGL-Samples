@@ -12,6 +12,8 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <RGL/Span.hpp>
+#include <cstdlib>
 
 /**
  @param val an angle in degrees
@@ -65,6 +67,20 @@ struct ExampleFramework : public AppBase{
     std::shared_ptr<RGL::ISemaphore> imageAvailableSemaphore, renderCompleteSemaphore;
     
     std::shared_ptr<RGL::IShaderLibrary> GetShader(const std::string& name);
+    
+    struct stbi_freer{
+        constexpr void operator()(void* ptr) const{
+            free(ptr);
+        }
+    };
+    
+    struct TextureData{
+        RGL::untyped_owning_span<stbi_freer> bytes;
+        uint32_t width, height;
+        uint32_t nchannels;
+    };
+    
+    TextureData LoadImage(const std::filesystem::path& path);
     
     Camera camera;
     

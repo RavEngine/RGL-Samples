@@ -4,6 +4,7 @@
 #include <fmt/format.h>
 #include <unordered_map>
 #include <iostream>
+#include <stb_image.h>
 #undef CreateSemaphore
 
 void ExampleFramework::init(int argc, char **argv){
@@ -142,4 +143,25 @@ std::shared_ptr<RGL::IShaderLibrary> ExampleFramework::GetShader(const std::stri
 #else
     return device->CreateShaderLibraryFromPath(getShaderPathname(name));
 #endif
+}
+
+ExampleFramework::TextureData ExampleFramework::LoadImage(const std::filesystem::path& path){
+    constexpr auto nlayers = 1;
+    
+    TextureData data;
+    auto pathstr = path.string();
+    std::replace( pathstr.begin(), pathstr.end(), '\\', '/'); // make unix pathnames
+    
+    FILE* file = fopen(pathstr.c_str(), "r");
+    if (!file){
+        throw std::runtime_error("Failed to open file");
+    }
+    
+    auto bytes = stbi_load_from_file(file, reinterpret_cast<int*>(&data.width), reinterpret_cast<int*>(&data.height), reinterpret_cast<int*>(&data.nchannels), 4);
+    
+    auto uncompressed_size = data.width * data.height * data.nchannels * nlayers;
+    data.bytes.ptr = bytes;
+    data.bytes.size_bytes = uncompressed_size;
+        
+    return data;
 }

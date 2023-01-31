@@ -2,6 +2,7 @@
 #include <RGL/Pipeline.hpp>
 #include <RGL/Buffer.hpp>
 #include <RGL/CommandBuffer.hpp>
+#include <RGL/Texture.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -15,6 +16,7 @@ struct Cubes : public ExampleFramework {
     std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
     
     std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
+    std::shared_ptr<RGL::ITexture> sampledTexture;
     
     struct Vertex {
         glm::vec3 pos;
@@ -164,6 +166,10 @@ struct Cubes : public ExampleFramework {
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
+        
+        auto imagedata = LoadImage("tx1.png");
+        
+        sampledTexture = device->CreateTextureWithData({.width = imagedata.width, .height = imagedata.height, .format = RGL::TextureFormat::RGBA8_SFloat}, imagedata.bytes);
         
         camera.position.z = 5;
 	}
