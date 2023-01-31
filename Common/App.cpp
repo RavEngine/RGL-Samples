@@ -63,6 +63,7 @@ int AppBase::run(int argc, char** argv) {
 
     string bundlepath = CFStringGetCStringPtr(resourcePath, kCFStringEncodingUTF8);
     
+    CFRelease(resourcesURL);
     CFRelease(absoluteResourceURL);
     CFRelease(resourcePath);
     std::filesystem::current_path(bundlepath);
