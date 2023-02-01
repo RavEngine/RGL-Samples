@@ -3,6 +3,7 @@
 #include <RGL/Buffer.hpp>
 #include <RGL/CommandBuffer.hpp>
 #include <RGL/Texture.hpp>
+#include <RGL/Sampler.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -17,6 +18,7 @@ struct Cubes : public ExampleFramework {
     
     std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
     std::shared_ptr<RGL::ITexture> sampledTexture;
+    std::shared_ptr<RGL::ISampler> textureSampler;
     
     struct Vertex {
         glm::vec3 pos;
@@ -171,6 +173,8 @@ struct Cubes : public ExampleFramework {
         
         sampledTexture = device->CreateTextureWithData({.width = imagedata.width, .height = imagedata.height, .format = RGL::TextureFormat::RGBA8_SFloat}, imagedata.bytes);
         
+        textureSampler = device->CreateSampler({});
+        
         camera.position.z = 5;
 	}
 	void tick() final {
@@ -207,6 +211,8 @@ struct Cubes : public ExampleFramework {
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
         commandBuffer->SetIndexBuffer(indexBuffer);
+        commandBuffer->SetFragmentSampler(textureSampler, 0);
+        commandBuffer->SetFragmentTexture(sampledTexture.get(), 0);
 		commandBuffer->DrawIndexed(std::size(indices));
 
 		commandBuffer->EndRendering();
