@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <iostream>
 #include <stb_image.h>
+#undef LoadImage
+
+// angry!!!!!
 #undef CreateSemaphore
 
 void ExampleFramework::init(int argc, char **argv){
@@ -150,14 +153,16 @@ ExampleFramework::TextureData ExampleFramework::LoadImage(const std::filesystem:
     
     TextureData data;
     auto pathstr = path.string();
+#if !_WIN32
     std::replace( pathstr.begin(), pathstr.end(), '\\', '/'); // make unix pathnames
+#endif
     
-    FILE* file = fopen(pathstr.c_str(), "r");
-    if (!file){
-        throw std::runtime_error("Failed to open file");
+    auto bytes = stbi_load(pathstr.c_str(), reinterpret_cast<int*>(&data.width), reinterpret_cast<int*>(&data.height), reinterpret_cast<int*>(&data.nchannels), 4);
+
+    if (!bytes) {
+        std::cerr << stbi_failure_reason() << std::endl;
+        throw std::runtime_error(stbi_failure_reason());
     }
-    
-    auto bytes = stbi_load_from_file(file, reinterpret_cast<int*>(&data.width), reinterpret_cast<int*>(&data.height), reinterpret_cast<int*>(&data.nchannels), 4);
     
     auto uncompressed_size = data.width * data.height * data.nchannels * nlayers;
     data.bytes.ptr = bytes;

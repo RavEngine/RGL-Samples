@@ -14,6 +14,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <RGL/Span.hpp>
 #include <cstdlib>
+#undef LoadImage
 
 /**
  @param val an angle in degrees
@@ -69,7 +70,7 @@ struct ExampleFramework : public AppBase{
     std::shared_ptr<RGL::IShaderLibrary> GetShader(const std::string& name);
     
     struct stbi_freer{
-        constexpr void operator()(void* ptr) const{
+        void operator()(void* ptr) const{
             free(ptr);
         }
     };
