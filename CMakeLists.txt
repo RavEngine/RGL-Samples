@@ -137,7 +137,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "5.1"
+				VS_SHADER_MODEL "6.7"
 				VS_SHADER_TYPE "Vertex"
 			)
 		endif()
@@ -163,7 +163,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "5.1"
+				VS_SHADER_MODEL "6.7"
 				VS_SHADER_TYPE "Pixel"
 			)
 		endif()
