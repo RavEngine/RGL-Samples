@@ -12,22 +12,50 @@
 #include <glm/glm.hpp>
 #include <format>
 #include <filesystem>
+
+#if RGL_VK_AVAILABLE
+#include <RGL/../../src/VkDevice.hpp>
+#include <RGL/../../src/VkSwapchain.hpp>
+#include <RGL/../../src/VkBuffer.hpp>
+#include <RGL/../../src/VkCommandBuffer.hpp>
+#include <RGL/../../src/VkCommandQueue.hpp>
+#include <RGL/../../src/VkRenderpass.hpp>
+#include <RGL/../../src/VkRenderPipeline.hpp>
+#include <RGL/../../src/VkSampler.hpp>
+#include <RGL/../../src/VkShaderLibrary.hpp>
+#include <RGL/../../src/VkSurface.hpp>
+#include <RGL/../../src/VkSynchronization.hpp>
+#include <RGL/../../src/VkTexture.hpp>
+#elif RGL_DX12_AVAILABLE
+#include <RGL/../../src/D3D12Device.hpp>
+#include <RGL/../../src/D3D12Swapchain.hpp>
+#include <RGL/../../src/D3D12Buffer.hpp>
+#include <RGL/../../src/D3D12CommandBuffer.hpp>
+#include <RGL/../../src/D3D12CommandQueue.hpp>
+#include <RGL/../../src/D3D12RenderPipeline.hpp>
+#include <RGL/../../src/D3D12Sampler.hpp>
+#include <RGL/../../src/D3D12ShaderLibrary.hpp>
+#include <RGL/../../src/D3D12Surface.hpp>
+#include <RGL/../../src/D3D12Synchronization.hpp>
+#include <RGL/../../src/D3D12Texture.hpp>
+#elif RGL_MTL_AVAILABLE
+#endif
 #undef CreateSemaphore
 
 struct HelloWorld : public AppBase {
-	std::shared_ptr<RGL::IDevice> device;
-	std::shared_ptr<RGL::ISurface> surface;
-	std::shared_ptr<RGL::ISwapchain> swapchain;
-	std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
-	std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-	std::shared_ptr<RGL::IBuffer> vertexBuffer;
+	RGLDevicePtr device;
+	RGLSurfacePtr surface;
+	RGLSwapchainPtr swapchain;
+	RGLPipelineLayoutPtr renderPipelineLayout;
+	RGLRenderPipelinePtr renderPipeline;
+	RGLBufferPtr vertexBuffer;
 
-	std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
+	RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
 
-	std::shared_ptr<RGL::ICommandQueue> commandQueue;
-	std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
-	std::shared_ptr<RGL::IFence> swapchainFence;
-	std::shared_ptr<RGL::ISemaphore> imageAvailableSemaphore, renderCompleteSemaphore;
+	RGLCommandQueuePtr commandQueue;
+	CommandBufferPtr commandBuffer;
+	RGLFencePtr swapchainFence;
+	RGLSemaphorePtr imageAvailableSemaphore, renderCompleteSemaphore;
 
 	struct Vertex {
 		glm::vec2 pos;

@@ -15,6 +15,7 @@
 #include <RGL/Span.hpp>
 #include <cstdlib>
 
+#if RGL_VK_AVAILABLE
 #include <RGL/../../src/VkDevice.hpp>
 #include <RGL/../../src/VkSwapchain.hpp>
 #include <RGL/../../src/VkBuffer.hpp>
@@ -27,6 +28,20 @@
 #include <RGL/../../src/VkSurface.hpp>
 #include <RGL/../../src/VkSynchronization.hpp>
 #include <RGL/../../src/VkTexture.hpp>
+#elif RGL_DX12_AVAILABLE
+#include <RGL/../../src/D3D12Device.hpp>
+#include <RGL/../../src/D3D12Swapchain.hpp>
+#include <RGL/../../src/D3D12Buffer.hpp>
+#include <RGL/../../src/D3D12CommandBuffer.hpp>
+#include <RGL/../../src/D3D12CommandQueue.hpp>
+#include <RGL/../../src/D3D12RenderPipeline.hpp>
+#include <RGL/../../src/D3D12Sampler.hpp>
+#include <RGL/../../src/D3D12ShaderLibrary.hpp>
+#include <RGL/../../src/D3D12Surface.hpp>
+#include <RGL/../../src/D3D12Synchronization.hpp>
+#include <RGL/../../src/D3D12Texture.hpp>
+#elif RGL_MTL_AVAILABLE
+#endif
 #undef LoadImage
 
 
