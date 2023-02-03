@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 #include <format>
 #include <filesystem>
+#undef CreateSemaphore
 
 struct HelloWorld : public AppBase {
 	RGLDevicePtr device;
