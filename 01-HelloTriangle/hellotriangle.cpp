@@ -39,6 +39,17 @@
 #include <RGL/../../src/D3D12Synchronization.hpp>
 #include <RGL/../../src/D3D12Texture.hpp>
 #elif RGL_MTL_AVAILABLE
+#include <RGL/../../src/MTLDevice.hpp>
+#include <RGL/../../src/MTLSwapchain.hpp>
+#include <RGL/../../src/MTLBuffer.hpp>
+#include <RGL/../../src/MTLCommandBuffer.hpp>
+#include <RGL/../../src/MTLCommandQueue.hpp>
+#include <RGL/../../src/MTLPipeline.hpp>
+#include <RGL/../../src/MTLSampler.hpp>
+#include <RGL/../../src/MTLShaderLibrary.hpp>
+#include <RGL/../../src/MTLSurface.hpp>
+#include <RGL/../../src/MTLSynchronization.hpp>
+#include <RGL/../../src/MTLTexture.hpp>
 #endif
 #undef CreateSemaphore
 
