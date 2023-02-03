@@ -14,7 +14,6 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <glm/glm.hpp>
-#include <format>
 #include <filesystem>
 #undef CreateSemaphore
 
