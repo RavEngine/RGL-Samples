@@ -7,6 +7,10 @@
 #include <RGL/Buffer.hpp>
 #include <RGL/CommandBuffer.hpp>
 #include <iostream>
+#if defined __linux__ && !defined(__ANDROID__)
+	#define SDL_VIDEO_DRIVER_X11 1		//Without this X11 support doesn't work
+	#define SDL_VIDEO_DRIVER_WAYLAND 1
+#endif
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <glm/glm.hpp>
@@ -76,13 +80,15 @@ struct HelloWorld : public AppBase {
 		}
 		surface = RGL::CreateSurfaceFromPlatformHandle(
 #if _UWP
-        &wmi.info.winrt.window,
+			{ &wmi.info.winrt.window },
 #elif _WIN32
-        &wmi.info.win.window,
+			{ &wmi.info.win.window },
 #elif TARGET_OS_IPHONE
-        wmi.info.uikit.window,
+			{ wmi.info.uikit.window },
 #elif __APPLE__
-        wmi.info.cocoa.window,
+			{ wmi.info.cocoa.window },
+#elif __linux__
+			{ wmi.info.x11.window, wmi.info.x11.display },
 #else
 #error Unknown platform
 #endif
