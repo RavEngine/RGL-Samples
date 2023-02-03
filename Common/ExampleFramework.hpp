@@ -1,6 +1,6 @@
 #pragma once
 #include "App.hpp"
-
+#include <RGL/Types.hpp>
 #include <RGL/RGL.hpp>
 #include <RGL/CommandQueue.hpp>
 #include <RGL/Surface.hpp>
@@ -14,7 +14,21 @@
 #include <glm/gtx/quaternion.hpp>
 #include <RGL/Span.hpp>
 #include <cstdlib>
+
+#include <RGL/../../src/VkDevice.hpp>
+#include <RGL/../../src/VkSwapchain.hpp>
+#include <RGL/../../src/VkBuffer.hpp>
+#include <RGL/../../src/VkCommandBuffer.hpp>
+#include <RGL/../../src/VkCommandQueue.hpp>
+#include <RGL/../../src/VkRenderpass.hpp>
+#include <RGL/../../src/VkRenderPipeline.hpp>
+#include <RGL/../../src/VkSampler.hpp>
+#include <RGL/../../src/VkShaderLibrary.hpp>
+#include <RGL/../../src/VkSurface.hpp>
+#include <RGL/../../src/VkSynchronization.hpp>
+#include <RGL/../../src/VkTexture.hpp>
 #undef LoadImage
+
 
 /**
  @param val an angle in degrees
@@ -60,14 +74,14 @@ struct ExampleFramework : public AppBase{
     virtual void onresize(int, int) {};
     
     // things required by all RGL samples
-    std::shared_ptr<RGL::IDevice> device;
-    std::shared_ptr<RGL::ICommandQueue> commandQueue;
-    std::shared_ptr<RGL::ISurface> surface;
-    std::shared_ptr<RGL::ISwapchain> swapchain;
-    std::shared_ptr<RGL::IFence> swapchainFence;
-    std::shared_ptr<RGL::ISemaphore> imageAvailableSemaphore, renderCompleteSemaphore;
+    RGLDevicePtr device;
+    RGLCommandQueuePtr commandQueue;
+    RGLSurfacePtr surface;
+    RGLSwapchainPtr swapchain;
+    RGLFencePtr swapchainFence;
+    RGLSemaphorePtr imageAvailableSemaphore, renderCompleteSemaphore;
     
-    std::shared_ptr<RGL::IShaderLibrary> GetShader(const std::string& name);
+    RGLShaderLibraryPtr GetShader(const std::string& name);
     
     struct stbi_freer{
         void operator()(void* ptr) const{

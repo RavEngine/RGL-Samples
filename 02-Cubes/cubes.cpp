@@ -11,15 +11,15 @@
 #undef LoadImage
 
 struct Cubes : public ExampleFramework {
-    std::shared_ptr<RGL::IPipelineLayout> renderPipelineLayout;
-    std::shared_ptr<RGL::IRenderPipeline> renderPipeline;
-    std::shared_ptr<RGL::IBuffer> vertexBuffer, indexBuffer;
+	RGLPipelineLayoutPtr renderPipelineLayout;
+    RGLRenderPipelinePtr renderPipeline;
+    RGLBufferPtr vertexBuffer, indexBuffer;
     
-    std::shared_ptr<RGL::IShaderLibrary> vertexShaderLibrary, fragmentShaderLibrary;
+    RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
     
     std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
-    std::shared_ptr<RGL::ITexture> sampledTexture;
-    std::shared_ptr<RGL::ISampler> textureSampler;
+	RGLTexturePtr sampledTexture;
+    RGLSamplerPtr textureSampler;
     
     struct Vertex {
         glm::vec3 pos;

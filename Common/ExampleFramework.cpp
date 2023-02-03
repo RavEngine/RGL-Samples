@@ -118,7 +118,7 @@ void ExampleFramework::shutdown(){
     RGL::Shutdown();
 }
 
-std::shared_ptr<RGL::IShaderLibrary> ExampleFramework::GetShader(const std::string& name){
+RGLShaderLibraryPtr ExampleFramework::GetShader(const std::string& name){
     auto getShaderPathname = [](const std::string& name) {
         const char* backendPath;
         const char* extension;
