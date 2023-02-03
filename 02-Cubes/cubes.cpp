@@ -97,11 +97,47 @@ struct Cubes : public ExampleFramework {
         });
         indexBuffer->SetBufferData(indices);
 
+		auto imagedata = LoadImage("tx1.png");
+
+		sampledTexture = device->CreateTextureWithData({ .width = imagedata.width, .height = imagedata.height, .format = RGL::TextureFormat::RGBA8_SFloat }, imagedata.bytes);
+
+		textureSampler = device->CreateSampler({});
+
 		// create a pipeline layout
+		// this describes what we *can* bind to the shader
 		RGL::PipelineLayoutDescriptor layoutConfig{
+			.bindings = {
+				{
+					.binding = 0,
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::CombinedImageSampler,
+					.descriptorCount = 1,
+					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
+				},
+				{
+					.binding = 1,
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::SampledImage,
+					.descriptorCount = 1,
+					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
+				},
+			},
+			.boundSamplers = {
+				textureSampler
+			},
 			.constants = {{ ubo, 0}}
 		};
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+
+
+		// then give the layout the data for it to represent
+		
+		renderPipelineLayout->SetLayout({
+			.boundTextures = {
+				{
+					.texture = sampledTexture,
+					.sampler = textureSampler,
+				}
+			}
+		});
 
 
 		// create a render pipeline
@@ -170,12 +206,6 @@ struct Cubes : public ExampleFramework {
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
         
-        auto imagedata = LoadImage("tx1.png");
-        
-        sampledTexture = device->CreateTextureWithData({.width = imagedata.width, .height = imagedata.height, .format = RGL::TextureFormat::RGBA8_SFloat}, imagedata.bytes);
-        
-        textureSampler = device->CreateSampler({});
-        
         camera.position.z = 5;
 	}
 	void tick() final {
@@ -232,6 +262,7 @@ struct Cubes : public ExampleFramework {
 	void sampleshutdown() final {
 
 		sampledTexture.reset();
+		textureSampler.reset();
 		commandBuffer.reset();
 		commandQueue.reset();
 

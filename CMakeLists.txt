@@ -57,6 +57,7 @@ if(CMAKE_CROSSCOMPILING)
 	)
 	add_custom_target("rglc" DEPENDS "${rglc_path}")
 endif()
+set(RGL_DISABLE_DX ON CACHE INTERNAL "")
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 
 
