@@ -242,8 +242,6 @@ struct Cubes : public ExampleFramework {
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
         commandBuffer->SetIndexBuffer(indexBuffer);
-        commandBuffer->SetFragmentSampler(textureSampler, 0);
-        commandBuffer->SetFragmentTexture(sampledTexture.get(), 0);
 		commandBuffer->DrawIndexed(std::size(indices));
 
 		commandBuffer->EndRendering();
