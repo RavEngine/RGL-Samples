@@ -203,13 +203,14 @@ struct Cubes : public ExampleFramework {
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
         
-        renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
-            .attachments = {
-                {
-                    .format = RGL::TextureFormat::BGRA8_Unorm,
-                    .loadOp = RGL::LoadAccessOperation::Clear,
-                    .storeOp = RGL::StoreAccessOperation::Store,
-                    .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+		renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
+			.attachments = {
+				{
+					.format = RGL::TextureFormat::BGRA8_Unorm,
+					.loadOp = RGL::LoadAccessOperation::Clear,
+					.storeOp = RGL::StoreAccessOperation::Store,
+					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+					.shouldTransition = true		// for swapchain images
                 }
             }
         });
