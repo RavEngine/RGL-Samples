@@ -28,9 +28,10 @@ struct HelloWorld : public AppBase {
 	RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
 
 	RGLCommandQueuePtr commandQueue;
-	CommandBufferPtr commandBuffer;
+	RGLCommandBufferPtr commandBuffer;
 	RGLFencePtr swapchainFence;
 	RGLSemaphorePtr imageAvailableSemaphore, renderCompleteSemaphore;
+    RGLRenderPassPtr renderPass;
 
 	struct Vertex {
 		glm::vec2 pos;
@@ -200,9 +201,19 @@ struct HelloWorld : public AppBase {
 				}
 			},
 			.pipelineLayout = renderPipelineLayout,
-			.subpassIndex = 0
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
+        
+        renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
+            .attachments = {
+                {
+                    .format = RGL::TextureFormat::BGRA8_Unorm,
+                    .loadOp = RGL::LoadAccessOperation::Clear,
+                    .storeOp = RGL::StoreAccessOperation::Store,
+                    .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+                }
+            }
+        });
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
@@ -221,12 +232,10 @@ struct HelloWorld : public AppBase {
 		commandBuffer->Begin();
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
+        
+        renderPass->SetAttachmentTexture(0, nextimg);
 
-		
-		commandBuffer->BeginRendering({
-			.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-			.targetFramebuffer = nextimg
-		});
+		commandBuffer->BeginRendering(renderPass);
 
 		commandBuffer->SetViewport({
 				.width = static_cast<float>(nextImgSize.width),
