@@ -276,7 +276,7 @@ struct HelloWorld : public AppBase {
 		// need to null these out before shutting down, otherwise validation errors will occur
 		// take care the order that these were initialized in - in general they should be uninitialized in reverse order
 		// to ensure all references are cleaned up
-
+        renderPass.reset();
 		commandBuffer.reset();
 		commandQueue.reset();
 

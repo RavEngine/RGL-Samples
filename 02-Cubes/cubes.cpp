@@ -20,6 +20,7 @@ struct Cubes : public ExampleFramework {
     std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
 	RGLTexturePtr sampledTexture;
     RGLSamplerPtr textureSampler;
+    RGLRenderPassPtr renderPass;
     
     struct Vertex {
         glm::vec3 pos;
@@ -199,9 +200,19 @@ struct Cubes : public ExampleFramework {
 				}
 			},
 			.pipelineLayout = renderPipelineLayout,
-			.subpassIndex = 0
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
+        
+        renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
+            .attachments = {
+                {
+                    .format = RGL::TextureFormat::BGRA8_Unorm,
+                    .loadOp = RGL::LoadAccessOperation::Clear,
+                    .storeOp = RGL::StoreAccessOperation::Store,
+                    .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+                }
+            }
+        });
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
@@ -223,11 +234,9 @@ struct Cubes : public ExampleFramework {
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
 
-		
-		commandBuffer->BeginRendering({
-			.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-			.targetFramebuffer = nextimg
-		});
+        renderPass->SetAttachmentTexture(0, nextimg);
+
+        commandBuffer->BeginRendering(renderPass);
 
 		commandBuffer->SetViewport({
 				.width = static_cast<float>(nextImgSize.width),
@@ -259,6 +268,7 @@ struct Cubes : public ExampleFramework {
 
 	void sampleshutdown() final {
 
+        renderPass.reset();
 		sampledTexture.reset();
 		textureSampler.reset();
 		commandBuffer.reset();
