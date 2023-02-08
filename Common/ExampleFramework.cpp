@@ -81,7 +81,7 @@ cont:
 #elif __APPLE__
         { wmi.info.cocoa.window },
 #elif __linux__
-        { wmi.info.x11.window, wmi.info.x11.display },
+        { wmi.info.x11.display, wmi.info.x11.window },
 #else
 #error Unknown platform
 #endif
