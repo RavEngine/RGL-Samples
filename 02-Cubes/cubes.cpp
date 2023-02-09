@@ -30,6 +30,7 @@ struct Cubes : public ExampleFramework {
     
     struct UniformBufferObject {
         glm::mat4 viewProj;
+		float timeSinceStart;
         
     } ubo;
     
@@ -259,6 +260,7 @@ struct Cubes : public ExampleFramework {
 	}
 	void tick() final {
         ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
+		ubo.timeSinceStart = getTimeSeconds();
 		
 		RGL::SwapchainPresentConfig presentConfig{
 			.waitSemaphores = {&renderCompleteSemaphore,1}
@@ -289,7 +291,9 @@ struct Cubes : public ExampleFramework {
 
 		commandBuffer->BindBuffer(vertexBuffer,0);
         commandBuffer->SetIndexBuffer(indexBuffer);
-		commandBuffer->DrawIndexed(std::size(indices));
+		commandBuffer->DrawIndexed(std::size(indices), {
+			.nInstances = 25
+		});
 
 		commandBuffer->EndRendering();
 		commandBuffer->End();

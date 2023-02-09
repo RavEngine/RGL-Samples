@@ -14,6 +14,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <RGL/Span.hpp>
 #include <cstdlib>
+#include <chrono>
 
 /**
  @param val an angle in degrees
@@ -48,6 +49,7 @@ struct Camera{
     }
 };
 
+
 // all examples aside from HelloTriangle use this for convenience
 struct ExampleFramework : public AppBase{
     void init(int argc, char** argv) final;
@@ -57,6 +59,20 @@ struct ExampleFramework : public AppBase{
     virtual void sampleinit(int argc, char** argv) = 0;
     virtual void sampleshutdown() = 0;
     virtual void onresize(int, int) {};
+
+    using clock_t = std::chrono::system_clock;
+
+    std::chrono::time_point<clock_t> applicationLaunchTime = clock_t::now();
+
+    auto getTime() {
+        return clock_t::now() - applicationLaunchTime;
+    }
+
+    float getTimeSeconds() {
+        auto time = getTime();
+        return std::chrono::duration_cast<std::chrono::duration<float,std::ratio<1,1>>>(time).count();
+    }
+
     
     // things required by all RGL samples
     RGLDevicePtr device;
