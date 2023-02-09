@@ -141,6 +141,8 @@ macro(add_sample dir)
 				GENERATED TRUE
 				VS_SHADER_MODEL "6.4"
 				VS_SHADER_TYPE "Vertex"
+				VS_SHADER_ENABLE_DEBUG ON
+				VS_SHADER_DISABLE_OPTIMIZATIONS ON
 			)
 		endif()
 		if(RGL_MTL_AVAILABLE)
@@ -167,6 +169,8 @@ macro(add_sample dir)
 				GENERATED TRUE
 				VS_SHADER_MODEL "6.4"
 				VS_SHADER_TYPE "Pixel"
+				VS_SHADER_ENABLE_DEBUG ON
+				VS_SHADER_DISABLE_OPTIMIZATIONS ON
 			)
 		endif()
 		if(RGL_MTL_AVAILABLE)
