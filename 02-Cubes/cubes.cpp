@@ -28,7 +28,7 @@ struct Cubes : public ExampleFramework {
         glm::vec2 uv;
     };
     
-    struct UniformBufferObject {
+    struct alignas(16) UniformBufferObject {
         glm::mat4 viewProj;
 		float timeSinceStart;
         

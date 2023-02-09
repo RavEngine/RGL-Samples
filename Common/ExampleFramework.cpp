@@ -92,7 +92,7 @@ cont:
     
     // create a swapchain for the surface
     // provide it the queue which will be presented on
-    swapchain = device->CreateSwapchain(surface, commandQueue, width * wmScaleFactor,height*wmScaleFactor);
+    swapchain = device->CreateSwapchain(surface, commandQueue, width ,height);
     swapchainFence = device->CreateFence(true);
     imageAvailableSemaphore = device->CreateSemaphore();
     renderCompleteSemaphore = device->CreateSemaphore();
