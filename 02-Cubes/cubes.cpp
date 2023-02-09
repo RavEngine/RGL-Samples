@@ -18,7 +18,7 @@ struct Cubes : public ExampleFramework {
     RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
     
     std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
-	RGLTexturePtr sampledTexture;
+	RGLTexturePtr sampledTexture, depthTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr renderPass;
     
@@ -79,6 +79,18 @@ struct Cubes : public ExampleFramework {
 	const char* SampleName() {
 		return "Cubes";
 	}
+	void createDepthTexture()
+	{
+		// create the depth buffer
+		depthTexture = device->CreateTexture({
+			.usage = RGL::TextureUsage::DepthStencilAttachment,
+			.aspect = RGL::TextureAspect::HasDepth,
+			.width = (uint32_t)width,
+			.height = (uint32_t)height,
+			.format = RGL::TextureFormat::D32SFloat
+			}
+		);
+	}
 	void sampleinit(int argc, char** argv) final {
         
         vertexShaderLibrary = GetShader("cubes.vert");
@@ -100,7 +112,17 @@ struct Cubes : public ExampleFramework {
 
 		auto imagedata = LoadImage("tx1.png");
 
-		sampledTexture = device->CreateTextureWithData({ .width = imagedata.width, .height = imagedata.height, .format = RGL::TextureFormat::RGBA8_SFloat }, imagedata.bytes);
+		sampledTexture = device->CreateTextureWithData(RGL::TextureConfig{ 
+			.usage = (RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferDestination),
+			.aspect = RGL::TextureAspect::HasColor,
+			.width = imagedata.width, 
+			.height = imagedata.height, 
+			.format = RGL::TextureFormat::RGBA8_Uint 
+			}, 
+			imagedata.bytes
+		);
+
+		createDepthTexture();
 
 		textureSampler = device->CreateSampler({});
 
@@ -199,6 +221,12 @@ struct Cubes : public ExampleFramework {
 					}
 				}
 			},
+			.depthStencilConfig = {
+				.depthFormat = RGL::TextureFormat::D32SFloat,
+				.depthTestEnabled = true,
+				.depthWriteEnabled = true,
+				.depthFunction = RGL::DepthCompareFunction::Less,
+			},
 			.pipelineLayout = renderPipelineLayout,
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
@@ -211,9 +239,18 @@ struct Cubes : public ExampleFramework {
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
 					.shouldTransition = true		// for swapchain images
-                }
-            }
-        });
+				}
+			},
+			.depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
+				.format = RGL::TextureFormat::D32SFloat,
+				.loadOp = RGL::LoadAccessOperation::Clear,
+				.storeOp = RGL::StoreAccessOperation::Store,
+				.clearColor = {1,1,1,1}
+			}
+		});
+
+		// the depth texture is not swapchained so we can set it once
+		renderPass->SetDepthAttachmentTexture(depthTexture.get());
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
@@ -267,9 +304,15 @@ struct Cubes : public ExampleFramework {
 		swapchain->Present(presentConfig);
 	}
 
+	void onresize(int width, int height) final {
+		createDepthTexture();
+		renderPass->SetDepthAttachmentTexture(depthTexture.get());	// we recreated it so we need to reset it
+	}
+
 	void sampleshutdown() final {
 
         renderPass.reset();
+		depthTexture.reset();
 		sampledTexture.reset();
 		textureSampler.reset();
 		commandBuffer.reset();
