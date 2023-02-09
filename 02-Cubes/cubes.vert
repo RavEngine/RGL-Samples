@@ -15,8 +15,8 @@ void main() {
     const uint gridSize = 5;
 
     vec3 pos = vec3(
-        gl_InstanceID % gridSize - gridSize/2.0f,   // column
-        gl_InstanceID / gridSize - gridSize/2.0f,    // row
+        (gl_InstanceID % gridSize - gridSize/2.0f) * 2.5,   // column
+        (gl_InstanceID / gridSize - gridSize/2.0f) * 2.5,    // row
         0
     );
 
@@ -31,16 +31,18 @@ void main() {
         vec4(pos, 1.0)
     );
 
+    float animTime = ubo.timeSinceStart * gl_InstanceID / 10.0f;
+
     mat4 rotmatx = mat4(
         vec4(1, 0, 0, 0),
-        vec4(0, cos(ubo.timeSinceStart), -sin(ubo.timeSinceStart), 0),
-        vec4(0, sin(ubo.timeSinceStart), cos(ubo.timeSinceStart), 0),
+        vec4(0, cos(animTime), -sin(animTime), 0),
+        vec4(0, sin(animTime), cos(animTime), 0),
         vec4(0, 0, 0, 1.0)
     );
 
      mat4 rotmatz = mat4(
-        vec4(cos(ubo.timeSinceStart), -sin(ubo.timeSinceStart), 0, 0),
-        vec4(sin(ubo.timeSinceStart), cos(ubo.timeSinceStart), 0, 0),
+        vec4(cos(animTime), -sin(animTime), 0, 0),
+        vec4(sin(animTime), cos(animTime), 0, 0),
         vec4(0, 0, 0, 0),
         vec4(0, 0, 0, 0)
     );

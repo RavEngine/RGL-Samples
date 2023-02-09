@@ -4,6 +4,7 @@
 #include <RGL/CommandBuffer.hpp>
 #include <RGL/Texture.hpp>
 #include <RGL/Sampler.hpp>
+#include <RGL/RenderPass.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -232,7 +233,7 @@ struct Cubes : public ExampleFramework {
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
         
-		renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
+		renderPass = RGL::CreateRenderPass({
 			.attachments = {
 				{
 					.format = RGL::TextureFormat::BGRA8_Unorm,

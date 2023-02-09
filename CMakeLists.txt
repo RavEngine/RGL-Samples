@@ -57,7 +57,7 @@ if(CMAKE_CROSSCOMPILING)
 	)
 	add_custom_target("rglc" DEPENDS "${rglc_path}")
 endif()
-set(RGL_DISABLE_DX ON CACHE INTERNAL "")
+set(RGL_DISABLE_DX OFF CACHE INTERNAL "")
 set(RGL_DISABLE_VK OFF CACHE INTERNAL "")
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 
@@ -139,7 +139,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "6.7"
+				VS_SHADER_MODEL "6.4"
 				VS_SHADER_TYPE "Vertex"
 			)
 		endif()
@@ -165,7 +165,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "6.7"
+				VS_SHADER_MODEL "6.4"
 				VS_SHADER_TYPE "Pixel"
 			)
 		endif()

@@ -5,6 +5,7 @@
 #include <RGL/Pipeline.hpp>
 #include <RGL/Swapchain.hpp>
 #include <RGL/Buffer.hpp>
+#include <RGL/RenderPass.hpp>
 #include <RGL/CommandBuffer.hpp>
 #include <iostream>
 #if defined __linux__ && !defined(__ANDROID__)
