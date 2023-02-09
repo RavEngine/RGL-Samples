@@ -118,7 +118,7 @@ struct Cubes : public ExampleFramework {
 			.aspect = RGL::TextureAspect::HasColor,
 			.width = imagedata.width, 
 			.height = imagedata.height, 
-			.format = RGL::TextureFormat::RGBA8_Uint 
+			.format = RGL::TextureFormat::RGBA8_Unorm
 			}, 
 			imagedata.bytes
 		);
