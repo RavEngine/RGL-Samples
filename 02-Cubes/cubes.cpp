@@ -18,7 +18,7 @@ struct Cubes : public ExampleFramework {
     
     RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
     
-    std::shared_ptr<RGL::ICommandBuffer> commandBuffer;
+    RGLCommandBufferPtr commandBuffer;
 	RGLTexturePtr sampledTexture, depthTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr renderPass;

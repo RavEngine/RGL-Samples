@@ -205,7 +205,7 @@ struct HelloWorld : public AppBase {
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
         
-		renderPass = std::make_shared<RGLRenderPassPtr::element_type>(RGL::RenderPassConfig{
+		renderPass = RGL::CreateRenderPass({
 			.attachments = {
 				{
 					.format = RGL::TextureFormat::BGRA8_Unorm,
