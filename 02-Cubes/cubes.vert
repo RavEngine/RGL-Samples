@@ -5,6 +5,11 @@ layout(push_constant) uniform UniformBufferObject{
     float timeSinceStart;
 } ubo;
 
+layout(std430, binding = 2) readonly buffer cubeSpeedsBuffer
+{
+    float cubeSpeeds[];
+};
+
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
@@ -22,7 +27,7 @@ void main() {
 
     const float scaleFactor = 1;
 
-
+    float spinSpeed = cubeSpeeds[gl_InstanceID];
 
     mat4 model = mat4(
         vec4(scaleFactor, 0.0, 0.0, 0.0),
@@ -31,7 +36,7 @@ void main() {
         vec4(pos, 1.0)
     );
 
-    float animTime = ubo.timeSinceStart * gl_InstanceID / 10.0f;
+    float animTime = ubo.timeSinceStart * spinSpeed;
 
     mat4 rotmatx = mat4(
         vec4(1, 0, 0, 0),

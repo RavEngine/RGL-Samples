@@ -8,13 +8,17 @@
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
+#include <random>
 #undef CreateSemaphore
 #undef LoadImage
+
+constexpr static uint32_t nCubes = 25;
+static float cubeSpinSpeeds [nCubes]{0};
 
 struct Cubes : public ExampleFramework {
 	RGLPipelineLayoutPtr renderPipelineLayout;
     RGLRenderPipelinePtr renderPipeline;
-    RGLBufferPtr vertexBuffer, indexBuffer;
+    RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
     
     RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
     
@@ -104,6 +108,22 @@ struct Cubes : public ExampleFramework {
 			vertices,
 		});
 		vertexBuffer->SetBufferData(vertices);
+        
+        // seed the buffer with random values
+        std::random_device rd;
+        std::mt19937 mt{rd()};
+        std::uniform_int_distribution<> distr(-5, 5);
+        for(auto& value : cubeSpinSpeeds){
+            value = distr(mt);
+        }
+        
+        instanceDataBuffer = device->CreateBuffer({
+           RGL::BufferConfig::Type::StorageBuffer,
+            sizeof(decltype(cubeSpinSpeeds[0])),
+            cubeSpinSpeeds
+        });
+        instanceDataBuffer->SetBufferData(cubeSpinSpeeds);
+        
         
         indexBuffer = device->CreateBuffer({
             RGL::BufferConfig::Type::IndexBuffer,
@@ -289,11 +309,11 @@ struct Cubes : public ExampleFramework {
 
 		commandBuffer->BindPipeline(renderPipeline);
 		commandBuffer->SetVertexBytes(ubo, 0);
-
+        commandBuffer->BindBuffer(instanceDataBuffer, 2);
 		commandBuffer->BindBuffer(vertexBuffer,0);
         commandBuffer->SetIndexBuffer(indexBuffer);
 		commandBuffer->DrawIndexed(std::size(indices), {
-			.nInstances = 25
+            .nInstances = nCubes
 		});
 
 		commandBuffer->EndRendering();
