@@ -10,11 +10,9 @@
 #include <SDL_syswm.h>
 #include <random>
 #include <imgui.h>
+#include <imgui_impl_sdl.h>
 #undef CreateSemaphore
 #undef LoadImage
-
-constexpr static uint32_t nCubes = 25;
-static float cubeSpinSpeeds [nCubes]{0};
 
 struct Cubes : public ExampleFramework {
 	RGLPipelineLayoutPtr renderPipelineLayout;
@@ -27,6 +25,8 @@ struct Cubes : public ExampleFramework {
 	RGLTexturePtr sampledTexture, depthTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr renderPass;
+    
+    ImGuiIO* imgui_io;
     
     struct Vertex {
         glm::vec3 pos;
@@ -52,21 +52,20 @@ struct Cubes : public ExampleFramework {
         constexpr static const char* const vertShader = R"(
 void main(){
 
-    gl_Position = vec3(1,1,1,1);
+    gl_Position = vec4(1,1,1,1);
 }
 )";
-                
-        vertexShaderLibrary = device->CreateShaderLibrarySourceCode(vertShader, {.stage = RGL::ShaderStage::Vertex});
-        fragmentShaderLibrary = GetShader("cubes.frag");
-    
         
-        // seed the buffer with random values
-        std::random_device rd;
-        std::mt19937 mt{rd()};
-        std::uniform_int_distribution<> distr(-5, 5);
-        for(auto& value : cubeSpinSpeeds){
-            value = distr(mt);
-        }
+        constexpr static const char* const fragShader = R"(
+layout(location = 0) out vec4 outcolor;
+void main(){
+
+    outcolor = vec4(1,1,1,1);
+}
+)";
+        
+        vertexShaderLibrary = device->CreateShaderLibrarySourceCode(vertShader, {.stage = RGL::ShaderStage::Vertex});
+        fragmentShaderLibrary = device->CreateShaderLibrarySourceCode(fragShader, {.stage = RGL::ShaderStage::Fragment});
     
 		textureSampler = device->CreateSampler({});
 
@@ -169,11 +168,14 @@ void main(){
 			}
 		});
 
-		// the depth texture is not swapchained so we can set it once
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());
-
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
+        
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        imgui_io = &ImGui::GetIO();
+        ImGui_ImplSDL2_InitForSDLRenderer(window, nullptr);        //TODO: is there a generic impl
+        ImGui::StyleColorsDark();
         
         camera.position.z = 5;
 	}
@@ -225,11 +227,6 @@ void main(){
 		commandBuffer->Commit(commitconfig);
 
 		swapchain->Present(presentConfig);
-	}
-
-	void onresize(int width, int height) final {
-		createDepthTexture();
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());	// we recreated it so we need to reset it
 	}
 
 	void sampleshutdown() final {
