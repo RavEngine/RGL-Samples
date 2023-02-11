@@ -66,7 +66,9 @@ int AppBase::run(int argc, char** argv) {
     CFRelease(resourcesURL);
     CFRelease(absoluteResourceURL);
     CFRelease(resourcePath);
-    std::filesystem::current_path(bundlepath);
+    if (std::filesystem::exists(bundlepath)){
+        std::filesystem::current_path(bundlepath);
+    }
 #endif
     
 	init(argc, argv);

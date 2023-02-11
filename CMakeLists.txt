@@ -34,7 +34,7 @@ add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
-
+add_subdirectory(deps/imgui-cmake EXCLUDE_FROM_ALL)
 
 if(CMAKE_CROSSCOMPILING)
 	set(RGL_ENABLE_RGLC OFF CACHE INTERNAL "")
@@ -82,6 +82,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 		glm
         fmt
 		stb_image
+        imgui
 )
 
 macro(add_sample dir)
@@ -195,6 +196,7 @@ endmacro()
 
 add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
+add_sample(03-Imgui)
 
 set_target_properties(
 	${SDLMAIN_LIB}
@@ -203,6 +205,7 @@ set_target_properties(
 	"RGL-Samples-Common"
     "fmt"
 	"stb_image"
+    #"imgui"
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
 )
