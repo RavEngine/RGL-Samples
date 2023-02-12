@@ -140,12 +140,6 @@ void main(){
 					}
 				}
 			},
-			.depthStencilConfig = {
-				.depthFormat = RGL::TextureFormat::D32SFloat,
-				.depthTestEnabled = true,
-				.depthWriteEnabled = true,
-				.depthFunction = RGL::DepthCompareFunction::Less,
-			},
 			.pipelineLayout = renderPipelineLayout,
 		};
 		renderPipeline = device->CreateRenderPipeline(rpd);
@@ -160,12 +154,6 @@ void main(){
 					.shouldTransition = true		// for swapchain images
 				}
 			},
-			.depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
-				.format = RGL::TextureFormat::D32SFloat,
-				.loadOp = RGL::LoadAccessOperation::Clear,
-				.storeOp = RGL::StoreAccessOperation::Store,
-				.clearColor = {1,1,1,1}
-			}
 		});
 
 		// create command buffer
