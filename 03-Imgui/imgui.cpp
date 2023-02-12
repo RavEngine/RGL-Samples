@@ -16,7 +16,7 @@
 #undef CreateSemaphore
 #undef LoadImage
 
-struct Cubes : public ExampleFramework {
+struct ImGuiDemo : public ExampleFramework {
 	RGLPipelineLayoutPtr renderPipelineLayout;
     RGLRenderPipelinePtr renderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
@@ -107,7 +107,7 @@ void main(){
 			.boundSamplers = {
 				textureSampler
 			},
-			.constants = {}
+			.constants = {{ ubo, 0}}
 		};
 		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
@@ -402,4 +402,4 @@ void main(){
 	}
 };
 
-START_SAMPLE(Cubes);
+START_SAMPLE(ImGuiDemo);
