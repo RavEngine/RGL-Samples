@@ -11,6 +11,7 @@
 #include <random>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
+
 #undef CreateSemaphore
 #undef LoadImage
 
@@ -162,13 +163,21 @@ void main(){
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         imgui_io = &ImGui::GetIO();
-        ImGui_ImplSDL2_InitForSDLRenderer(window, nullptr);        //TODO: is there a generic impl
+		
         ImGui::StyleColorsDark();
         
         camera.position.z = 5;
 	}
+
+	void onevent(SDL_Event& event) final{
+		ImGui_ImplSDL2_ProcessEvent(&event);
+	}
+
 	void tick() final {
 		
+		ImGui_ImplSDL2_NewFrame();
+		ImGui::NewFrame();
+		ImGui::ShowDemoWindow();
 		RGL::SwapchainPresentConfig presentConfig{
 			.waitSemaphores = {&renderCompleteSemaphore,1}
 		};
@@ -182,6 +191,8 @@ void main(){
 		auto nextImgSize = nextimg->GetSize();
 
         renderPass->SetAttachmentTexture(0, nextimg);
+
+		ImGui::Render();
 
         commandBuffer->BeginRendering(renderPass);
 
