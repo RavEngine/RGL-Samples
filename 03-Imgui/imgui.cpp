@@ -11,6 +11,7 @@
 #include <random>
 #include <imgui.h>
 #include <imgui_impl_sdl.h>
+#include <imgui_impl_sdl.cpp>
 
 #undef CreateSemaphore
 #undef LoadImage
@@ -23,7 +24,7 @@ struct Cubes : public ExampleFramework {
     RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
     
     RGLCommandBufferPtr commandBuffer;
-	RGLTexturePtr sampledTexture, depthTexture;
+	RGLTexturePtr fontsTexture, depthTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr renderPass;
     
@@ -162,11 +163,46 @@ void main(){
         
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+		ImGui_ImplSDL2_Init(window,nullptr);
         imgui_io = &ImGui::GetIO();
-		
+		imgui_io->BackendRendererUserData = this;
+		imgui_io->BackendRendererName = "imgui_impl_RGL";
+		imgui_io->BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
         ImGui::StyleColorsDark();
+
+		// create the font texture
+		unsigned char* pixels;
+		int width, height;
+		imgui_io->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+		fontsTexture = device->CreateTextureWithData(RGL::TextureConfig{
+			.usage = (RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferDestination),
+			.aspect = RGL::TextureAspect::HasColor,
+			.width = static_cast<uint32_t>(width),
+			.height = static_cast<uint32_t>(height),
+			.format = RGL::TextureFormat::RGBA8_Unorm
+			},
+			pixels
+		);
+		imgui_io->Fonts->SetTexID(fontsTexture.get());
         
         camera.position.z = 5;
+	}
+
+	void refreshBuffers(uint32_t vertBufLen, uint32_t indBufLen) {
+		//TODO: if the new requested size > current buffer size, regen buffer
+
+		vertexBuffer = device->CreateBuffer({
+			vertBufLen,
+			RGL::BufferConfig::Type::VertexBuffer,
+			sizeof(ImDrawVert),
+		});
+		indexBuffer = device->CreateBuffer({
+			vertBufLen,
+			RGL::BufferConfig::Type::IndexBuffer,
+			sizeof(ImDrawIdx),
+		});
+		vertexBuffer->MapMemory();
+		indexBuffer->MapMemory();
 	}
 
 	void onevent(SDL_Event& event) final{
@@ -193,29 +229,94 @@ void main(){
         renderPass->SetAttachmentTexture(0, nextimg);
 
 		ImGui::Render();
+		auto drawData = ImGui::GetDrawData();
+		size_t vertexBufferLength = (size_t)drawData->TotalVtxCount * sizeof(ImDrawVert);
+		size_t indexBufferLength = (size_t)drawData->TotalIdxCount * sizeof(ImDrawIdx);
+		
+		// create the unified vert / ind buffer 
+		refreshBuffers(vertexBufferLength, indexBufferLength);
 
-        commandBuffer->BeginRendering(renderPass);
+		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
+		int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
+		int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
+		if (fb_width <= 0 || fb_height <= 0 || drawData->CmdListsCount == 0)
+			return;
 
-		commandBuffer->SetViewport({
-				.width = static_cast<float>(nextImgSize.width),
-				.height = static_cast<float>(nextImgSize.height),
-			});
-		commandBuffer->SetScissor({
-				.extent = {nextImgSize.width, nextImgSize.height}
-			});
+		// Will project scissor/clipping rectangles into framebuffer space
+		ImVec2 clip_off = drawData->DisplayPos;         // (0,0) unless using multi-viewports
+		ImVec2 clip_scale = drawData->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-        /*
+		commandBuffer->Begin();
 		commandBuffer->BindPipeline(renderPipeline);
-		commandBuffer->SetVertexBytes(ubo, 0);
-        commandBuffer->BindBuffer(instanceDataBuffer, 2);
-		commandBuffer->BindBuffer(vertexBuffer,0);
-        commandBuffer->SetIndexBuffer(indexBuffer);
-		commandBuffer->DrawIndexed(std::size(indices), {
-            .nInstances = nCubes
-		});
-         */
+		size_t vertexBufferOffset = 0;
+		size_t indexBufferOffset = 0;
+		for (int n = 0; n < drawData->CmdListsCount; n++)
+		{
+			const ImDrawList* cmd_list = drawData->CmdLists[n];
+			// TODO: populate buffers considering offset
+			for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+			{
+				const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+				if (pcmd->UserCallback)
+				{
+					// User callback, registered via ImDrawList::AddCallback()
+					// (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
+					if (pcmd->UserCallback == ImDrawCallback_ResetRenderState) {
+						//TODO: nuke all the state 
+					}
+					else
+						pcmd->UserCallback(cmd_list, pcmd);
+				}
+				else
+				{
+					// Project scissor/clipping rectangles into framebuffer space
+					ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+					ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
 
-		commandBuffer->EndRendering();
+					// Clamp to viewport as setScissorRect() won't accept values that are off bounds
+					if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+					if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+					if (clip_max.x > fb_width) { clip_max.x = (float)fb_width; }
+					if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
+					if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+						continue;
+					if (pcmd->ElemCount == 0) // drawIndexedPrimitives() validation doesn't accept this
+						continue;
+
+					commandBuffer->BeginRendering(renderPass);
+
+					commandBuffer->SetViewport({
+						.width = static_cast<float>(nextImgSize.width),
+						.height = static_cast<float>(nextImgSize.height),
+						});
+					commandBuffer->SetScissor({
+						.offset = {
+							static_cast<int>(clip_min.x),
+							static_cast<int>(clip_min.y)
+						},
+						.extent = {
+							static_cast<uint32_t>(clip_max.x - clip_min.x),
+							static_cast<uint32_t>(clip_max.y - clip_min.y),
+						}
+						});
+
+					if (ImTextureID tex_id = pcmd->GetTexID()) {
+						//TODO: texture vs no texture
+					}
+
+					//TODO: set buffer offsets
+					commandBuffer->SetIndexBuffer(indexBuffer);
+					commandBuffer->BindBuffer(vertexBuffer, 0);
+					commandBuffer->DrawIndexed(pcmd->ElemCount, {
+						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset * sizeof(ImDrawIdx))
+					});
+					commandBuffer->EndRendering();
+				}
+			}
+			vertexBufferOffset += (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
+			indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
+		}
+
 		commandBuffer->End();
 		
 		RGL::CommitConfig commitconfig{
@@ -229,10 +330,11 @@ void main(){
 	}
 
 	void sampleshutdown() final {
-
+		ImGui_ImplSDL2_Shutdown();
+		ImGui::DestroyContext();
         renderPass.reset();
 		depthTexture.reset();
-		sampledTexture.reset();
+		fontsTexture.reset();
 		textureSampler.reset();
 		commandBuffer.reset();
 		commandQueue.reset();
