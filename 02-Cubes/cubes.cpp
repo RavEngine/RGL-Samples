@@ -310,7 +310,7 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->BindPipeline(renderPipeline);
 		commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->BindBuffer(instanceDataBuffer, 2);
-		commandBuffer->BindBuffer(vertexBuffer,0);
+		commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
 		commandBuffer->DrawIndexed(std::size(indices), {
             .nInstances = nCubes

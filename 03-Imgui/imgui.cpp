@@ -30,12 +30,12 @@ struct Cubes : public ExampleFramework {
     
     ImGuiIO* imgui_io;
     
-    struct Vertex {
-        glm::vec3 pos;
-    };
+    struct UniformData{
+        float projMat[4][4];
+    } ubo;
 
 	const char* SampleName() {
-		return "Cubes";
+		return "ImGui";
 	}
 	void createDepthTexture()
 	{
@@ -52,17 +52,33 @@ struct Cubes : public ExampleFramework {
 	void sampleinit(int argc, char** argv) final {
         
         constexpr static const char* const vertShader = R"(
+layout(push_constant) uniform UniformBufferObject{
+    mat4 projMat;
+} ubo;
+
+layout (location = 0) in vec2 inPos;
+layout (location = 1) in vec2 inUV;
+layout (location = 2) in uint inColor;
+
+layout(location = 0) out vec2 outUV;
+layout(location = 1) out vec4 outColor;
+
 void main(){
 
-    gl_Position = vec4(1,1,1,1);
+    gl_Position = ubo.projMat * vec4(inPos, 0, 1);
+    outUV = inUV;
+    outColor = unpackUnorm4x8(inColor);
 }
 )";
         
         constexpr static const char* const fragShader = R"(
-layout(location = 0) out vec4 outcolor;
+layout(location = 0) in vec2 inUV;
+layout(location = 1) in vec4 inColor;
+
+layout(location = 0) out vec4 outColor;
 void main(){
 
-    outcolor = vec4(1,1,1,1);
+    outColor = inColor;
 }
 )";
         
@@ -111,15 +127,27 @@ void main(){
 			.vertexConfig = {
 				.vertexBindinDesc = {
 					.binding = 0,
-					.stride = sizeof(Vertex),
+					.stride = sizeof(ImDrawVert),
 				},
 				.attributeDescs = {
 					{
 						.location = 0,
 						.binding = 0,
-						.offset = offsetof(Vertex,pos),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
+						.offset = offsetof(ImDrawVert,pos),
+						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
 					},
+                    {
+                        .location = 1,
+                        .binding = 0,
+                        .offset = offsetof(ImDrawVert,uv),
+                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+                    },
+                    {
+                        .location = 2,
+                        .binding = 0,
+                        .offset = offsetof(ImDrawVert,col),
+                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32_Uint,
+                    },
 				}
 			},
 			.inputAssembly = {
@@ -181,7 +209,7 @@ void main(){
 			.height = static_cast<uint32_t>(height),
 			.format = RGL::TextureFormat::RGBA8_Unorm
 			},
-			pixels
+             {pixels, static_cast<size_t>(width * height * 4)}
 		);
 		imgui_io->Fonts->SetTexID(fontsTexture.get());
         
@@ -189,20 +217,20 @@ void main(){
 	}
 
 	void refreshBuffers(uint32_t vertBufLen, uint32_t indBufLen) {
-		//TODO: if the new requested size > current buffer size, regen buffer
-
-		vertexBuffer = device->CreateBuffer({
-			vertBufLen,
-			RGL::BufferConfig::Type::VertexBuffer,
-			sizeof(ImDrawVert),
-		});
-		indexBuffer = device->CreateBuffer({
-			vertBufLen,
-			RGL::BufferConfig::Type::IndexBuffer,
-			sizeof(ImDrawIdx),
-		});
-		vertexBuffer->MapMemory();
-		indexBuffer->MapMemory();
+        if (!vertexBuffer || vertexBuffer->getBufferSize() < vertBufLen){
+            vertexBuffer = device->CreateBuffer({
+                vertBufLen,
+                RGL::BufferConfig::Type::VertexBuffer,
+                sizeof(ImDrawVert),
+            });
+        }
+        if (!indexBuffer || indexBuffer->getBufferSize() < indBufLen){
+            indexBuffer = device->CreateBuffer({
+                vertBufLen,
+                RGL::BufferConfig::Type::IndexBuffer,
+                sizeof(ImDrawIdx),
+            });
+        }
 	}
 
 	void onevent(SDL_Event& event) final{
@@ -221,8 +249,7 @@ void main(){
 		swapchain->GetNextImage(&presentConfig.imageIndex, imageAvailableSemaphore);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
-		commandBuffer->Reset();
-		commandBuffer->Begin();
+		
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
 
@@ -235,6 +262,8 @@ void main(){
 		
 		// create the unified vert / ind buffer 
 		refreshBuffers(vertexBufferLength, indexBufferLength);
+        vertexBuffer->MapMemory();
+        indexBuffer->MapMemory();
 
 		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 		int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
@@ -245,15 +274,37 @@ void main(){
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = drawData->DisplayPos;         // (0,0) unless using multi-viewports
 		ImVec2 clip_scale = drawData->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+        
+        // set the projection matrix
+        float L = drawData->DisplayPos.x;
+        float R = drawData->DisplayPos.x + drawData->DisplaySize.x;
+        float T = drawData->DisplayPos.y;
+        float B = drawData->DisplayPos.y + drawData->DisplaySize.y;
+        float N = 0;
+        float F = 1;
+        const float ortho_projection[4][4] =
+        {
+           { 2.0f/(R-L),   0.0f,           0.0f,   0.0f },
+           { 0.0f,         2.0f/(T-B),     0.0f,   0.0f },
+           { 0.0f,         0.0f,        1/(F-N),   0.0f },
+           { (R+L)/(L-R),  (T+B)/(B-T), N/(F-N),   1.0f },
+        };
+        memcpy(ubo.projMat, ortho_projection, sizeof(ortho_projection));
+        
+        commandBuffer->Reset();
+        commandBuffer->Begin();
+        commandBuffer->BeginRendering(renderPass);
+        commandBuffer->BindPipeline(renderPipeline);
 
-		commandBuffer->Begin();
-		commandBuffer->BindPipeline(renderPipeline);
 		size_t vertexBufferOffset = 0;
 		size_t indexBufferOffset = 0;
 		for (int n = 0; n < drawData->CmdListsCount; n++)
 		{
 			const ImDrawList* cmd_list = drawData->CmdLists[n];
-			// TODO: populate buffers considering offset
+            
+            vertexBuffer->UpdateBufferData({ cmd_list->VtxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert)}, vertexBufferOffset);
+            indexBuffer->UpdateBufferData({ cmd_list->IdxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawIdx)}, vertexBufferOffset);
+            
 			for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 			{
 				const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
@@ -283,7 +334,6 @@ void main(){
 					if (pcmd->ElemCount == 0) // drawIndexedPrimitives() validation doesn't accept this
 						continue;
 
-					commandBuffer->BeginRendering(renderPass);
 
 					commandBuffer->SetViewport({
 						.width = static_cast<float>(nextImgSize.width),
@@ -304,20 +354,22 @@ void main(){
 						//TODO: texture vs no texture
 					}
 
-					//TODO: set buffer offsets
+                    commandBuffer->SetVertexBytes(ubo, 0);
+                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset);
 					commandBuffer->SetIndexBuffer(indexBuffer);
 					commandBuffer->BindBuffer(vertexBuffer, 0);
 					commandBuffer->DrawIndexed(pcmd->ElemCount, {
 						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset * sizeof(ImDrawIdx))
 					});
-					commandBuffer->EndRendering();
 				}
 			}
 			vertexBufferOffset += (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
 			indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
 		}
-
+        commandBuffer->EndRendering();
 		commandBuffer->End();
+        vertexBuffer->UnmapMemory();
+        indexBuffer->UnmapMemory();
 		
 		RGL::CommitConfig commitconfig{
 			.signalFence = swapchainFence,

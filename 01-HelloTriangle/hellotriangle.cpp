@@ -250,7 +250,7 @@ struct HelloWorld : public AppBase {
 		commandBuffer->BindPipeline(renderPipeline);
 		commandBuffer->SetVertexBytes(ubo, 0);
 
-		commandBuffer->BindBuffer(vertexBuffer,0);
+		commandBuffer->SetVertexBuffer(vertexBuffer);
 		commandBuffer->Draw(std::size(vertices));
 
 		commandBuffer->EndRendering();
