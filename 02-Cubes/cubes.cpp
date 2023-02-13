@@ -164,6 +164,12 @@ struct Cubes : public ExampleFramework {
 					.descriptorCount = 1,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
+				{
+					.binding = 2,
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::StorageBuffer,
+					.descriptorCount = 1,
+					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex,
+				},
 			},
 			.boundSamplers = {
 				textureSampler
@@ -284,10 +290,9 @@ struct Cubes : public ExampleFramework {
 		ubo.timeSinceStart = getTimeSeconds();
 		
 		RGL::SwapchainPresentConfig presentConfig{
-			.waitSemaphores = {&renderCompleteSemaphore,1}
 		};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, imageAvailableSemaphore);
+		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
 		commandBuffer->Reset();
@@ -321,8 +326,6 @@ struct Cubes : public ExampleFramework {
 		
 		RGL::CommitConfig commitconfig{
 			.signalFence = swapchainFence,
-			.waitSemaphores = {&imageAvailableSemaphore,1},
-			.signalSemaphores = {&renderCompleteSemaphore, 1}
 		};
 		commandBuffer->Commit(commitconfig);
 

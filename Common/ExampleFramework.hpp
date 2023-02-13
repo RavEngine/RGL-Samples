@@ -80,8 +80,7 @@ struct ExampleFramework : public AppBase{
     RGLSurfacePtr surface;
     RGLSwapchainPtr swapchain;
     RGLFencePtr swapchainFence;
-    RGLSemaphorePtr imageAvailableSemaphore, renderCompleteSemaphore;
-    
+
     RGLShaderLibraryPtr GetShader(const std::string& name);
     
     struct stbi_freer{

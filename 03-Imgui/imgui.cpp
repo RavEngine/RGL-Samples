@@ -242,13 +242,9 @@ void main(){
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 		ImGui::ShowDemoWindow();
-		RGL::SwapchainPresentConfig presentConfig{
-			.waitSemaphores = {&renderCompleteSemaphore,1}
-		};
+		RGL::SwapchainPresentConfig presentConfig{};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, imageAvailableSemaphore);
-		swapchainFence->Wait();
-		swapchainFence->Reset();
+		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
 		
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
@@ -373,8 +369,6 @@ void main(){
 		
 		RGL::CommitConfig commitconfig{
 			.signalFence = swapchainFence,
-			.waitSemaphores = {&imageAvailableSemaphore,1},
-			.signalSemaphores = {&renderCompleteSemaphore, 1}
 		};
 		commandBuffer->Commit(commitconfig);
 

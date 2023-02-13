@@ -31,7 +31,6 @@ struct HelloWorld : public AppBase {
 	RGLCommandQueuePtr commandQueue;
 	RGLCommandBufferPtr commandBuffer;
 	RGLFencePtr swapchainFence;
-	RGLSemaphorePtr imageAvailableSemaphore, renderCompleteSemaphore;
     RGLRenderPassPtr renderPass;
 
 	struct Vertex {
@@ -103,8 +102,6 @@ struct HelloWorld : public AppBase {
 		// provide it the queue which will be presented on
 		swapchain = device->CreateSwapchain(surface, commandQueue, width * wmScaleFactor,height*wmScaleFactor);
 		swapchainFence = device->CreateFence(true); 
-		imageAvailableSemaphore = device->CreateSemaphore();
-		renderCompleteSemaphore = device->CreateSemaphore();
 
 		auto getShaderPathname = [](const std::string& name) {
 			const char* backendPath;
@@ -224,10 +221,9 @@ struct HelloWorld : public AppBase {
 		ubo.time++;
 		
 		RGL::SwapchainPresentConfig presentConfig{
-			.waitSemaphores = {&renderCompleteSemaphore,1}
 		};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, imageAvailableSemaphore);
+		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
 		commandBuffer->Reset();
@@ -258,8 +254,6 @@ struct HelloWorld : public AppBase {
 		
 		RGL::CommitConfig commitconfig{
 			.signalFence = swapchainFence,
-			.waitSemaphores = {&imageAvailableSemaphore,1},
-			.signalSemaphores = {&renderCompleteSemaphore, 1}
 		};
 		commandBuffer->Commit(commitconfig);
 
@@ -289,8 +283,6 @@ struct HelloWorld : public AppBase {
 
 		renderPipeline.reset();
 		renderPipelineLayout.reset();
-		renderCompleteSemaphore.reset();
-		imageAvailableSemaphore.reset();
 		swapchainFence.reset();
 		swapchain.reset();
 		surface.reset();

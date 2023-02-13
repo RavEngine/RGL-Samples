@@ -94,8 +94,6 @@ cont:
     // provide it the queue which will be presented on
     swapchain = device->CreateSwapchain(surface, commandQueue, width ,height);
     swapchainFence = device->CreateFence(true);
-    imageAvailableSemaphore = device->CreateSemaphore();
-    renderCompleteSemaphore = device->CreateSemaphore();
     
     sampleinit(argc, argv);
 }
@@ -115,8 +113,6 @@ void ExampleFramework::shutdown(){
     
     sampleshutdown();
     
-    renderCompleteSemaphore.reset();
-    imageAvailableSemaphore.reset();
     swapchainFence.reset();
     swapchain.reset();
     surface.reset();
