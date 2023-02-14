@@ -17,7 +17,7 @@ layout(location = 2) in vec2 inUV;
 layout(location = 0) out vec2 outUV;
 
 void main() {
-    const uint gridSize = 5;
+    const uint gridSize = 6;
 
     vec3 pos = vec3(
         (gl_InstanceID % gridSize - gridSize/2.0f) * 2.5,   // column

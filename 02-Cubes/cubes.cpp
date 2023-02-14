@@ -12,7 +12,7 @@
 #undef CreateSemaphore
 #undef LoadImage
 
-constexpr static uint32_t nCubes = 25;
+constexpr static uint32_t nCubes = 36;
 static float cubeSpinSpeeds [nCubes]{0};
 
 struct Cubes : public ExampleFramework {
@@ -112,7 +112,7 @@ struct Cubes : public ExampleFramework {
         // seed the buffer with random values
         std::random_device rd;
         std::mt19937 mt{rd()};
-        std::uniform_int_distribution<> distr(-5, 5);
+        std::uniform_real_distribution<> distr(-5, 5);
         for(auto& value : cubeSpinSpeeds){
             value = distr(mt);
         }
@@ -283,7 +283,7 @@ struct Cubes : public ExampleFramework {
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
         
-        camera.position.z = 5;
+        camera.position.z = 10;
 	}
 	void tick() final {
         ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
