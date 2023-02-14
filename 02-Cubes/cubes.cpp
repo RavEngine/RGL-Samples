@@ -317,6 +317,7 @@ struct Cubes : public ExampleFramework {
         commandBuffer->BindBuffer(instanceDataBuffer, 2);
 		commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
+		commandBuffer->SetCombinedTextureSampler(textureSampler, sampledTexture.get(), 0);
 		commandBuffer->DrawIndexed(std::size(indices), {
             .nInstances = nCubes
 		});
