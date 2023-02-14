@@ -72,13 +72,15 @@ void main(){
 )";
         
         constexpr static const char* const fragShader = R"(
+uniform sampler2D texSampler;
+
 layout(location = 0) in vec2 inUV;
 layout(location = 1) in vec4 inColor;
 
 layout(location = 0) out vec4 outColor;
 void main(){
 
-    outColor = inColor;
+    outColor = inColor * texture(texSampler, inUV);
 }
 )";
         
@@ -347,7 +349,7 @@ void main(){
 						});
 
 					if (ImTextureID tex_id = pcmd->GetTexID()) {
-						//TODO: texture vs no texture
+                        commandBuffer->SetCombinedTextureSampler(textureSampler, fontsTexture.get(), 0);
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);
