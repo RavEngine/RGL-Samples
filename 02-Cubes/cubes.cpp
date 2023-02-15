@@ -292,7 +292,7 @@ struct Cubes : public ExampleFramework {
 		RGL::SwapchainPresentConfig presentConfig{
 		};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
+		swapchain->GetNextImage(&presentConfig.imageIndex);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
 		commandBuffer->Reset();
@@ -340,6 +340,7 @@ struct Cubes : public ExampleFramework {
 
 	void sampleshutdown() final {
 
+		instanceDataBuffer.reset();
         renderPass.reset();
 		depthTexture.reset();
 		sampledTexture.reset();

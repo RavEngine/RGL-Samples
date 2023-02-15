@@ -223,7 +223,7 @@ struct HelloWorld : public AppBase {
 		RGL::SwapchainPresentConfig presentConfig{
 		};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
+		swapchain->GetNextImage(&presentConfig.imageIndex);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
 		commandBuffer->Reset();

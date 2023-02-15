@@ -246,7 +246,7 @@ void main(){
 		ImGui::ShowDemoWindow();
 		RGL::SwapchainPresentConfig presentConfig{};
 
-		swapchain->GetNextImage(&presentConfig.imageIndex, swapchainFence);
+		swapchain->GetNextImage(&presentConfig.imageIndex);
 		
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
