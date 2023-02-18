@@ -360,9 +360,8 @@ void main(){
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);
-                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset);
+                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset + pcmd->VtxOffset * sizeof(ImDrawVert));
 					commandBuffer->SetIndexBuffer(indexBuffer);
-					commandBuffer->BindBuffer(vertexBuffer, 0);
 					commandBuffer->DrawIndexed(pcmd->ElemCount, {
 						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset * sizeof(ImDrawIdx))
 					});
