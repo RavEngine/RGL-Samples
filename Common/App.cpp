@@ -91,8 +91,8 @@ int AppBase::run(int argc, char** argv) {
 					}
 				}
 			}
+            onevent(event);
 		}
-		onevent(event);
 		tick();
 	}
 
