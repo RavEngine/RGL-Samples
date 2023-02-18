@@ -168,7 +168,14 @@ void main(){
 			.colorBlendConfig{
 				.attachments = {
 					{
-						.format = RGL::TextureFormat::BGRA8_Unorm	// specify attachment data
+						.format = RGL::TextureFormat::BGRA8_Unorm,	// specify attachment data
+                        .colorBlendOperation = RGL::BlendOperation::Add,
+                        .sourceColorBlendFactor = RGL::BlendFactor::SourceAlpha,
+                        .destinationColorBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
+                        .alphaBlendOperation = RGL::BlendOperation::Add,
+                        .sourceAlphaBlendFactor = RGL::BlendFactor::One,
+                        .destinationAlphaBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
+                        .blendEnabled = true
 					}
 				}
 			},
