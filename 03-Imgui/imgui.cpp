@@ -169,12 +169,15 @@ void main(){
 				.attachments = {
 					{
 						.format = RGL::TextureFormat::BGRA8_Unorm,	// specify attachment data
-                        .colorBlendOperation = RGL::BlendOperation::Add,
+                 
                         .sourceColorBlendFactor = RGL::BlendFactor::SourceAlpha,
                         .destinationColorBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
-                        .alphaBlendOperation = RGL::BlendOperation::Add,
                         .sourceAlphaBlendFactor = RGL::BlendFactor::One,
                         .destinationAlphaBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
+
+						.colorBlendOperation = RGL::BlendOperation::Add,
+						.alphaBlendOperation = RGL::BlendOperation::Add,
+
                         .blendEnabled = true
 					}
 				}
