@@ -17,6 +17,7 @@ public:
 	virtual const char* SampleName() = 0;
 	virtual void init(int argc, char** argv) = 0;
 	virtual void tick() = 0;
+    virtual void internaltick(){}
 	virtual void shutdown() = 0;
 	virtual void sizechanged(int width, int height) {}
 	virtual void onevent(union SDL_Event&) {}

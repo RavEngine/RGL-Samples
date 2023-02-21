@@ -172,3 +172,61 @@ ExampleFramework::TextureData ExampleFramework::LoadImage(const std::filesystem:
         
     return data;
 }
+
+void ExampleFramework::onevent(union SDL_Event & evt) {
+    // camera controls
+    switch(evt.type){
+        case SDL_KEYDOWN:
+            switch(evt.key.keysym.scancode){
+                case SDL_SCANCODE_W: cameraKeyStates.forward = true; break;
+                case SDL_SCANCODE_S: cameraKeyStates.back = true; break;
+                case SDL_SCANCODE_A: cameraKeyStates.left = true; break;
+                case SDL_SCANCODE_D: cameraKeyStates.right = true; break;
+                case SDL_SCANCODE_LSHIFT: cameraKeyStates.down = true; break;
+                case SDL_SCANCODE_SPACE: cameraKeyStates.up = true; break;
+                default:
+                    break;
+            };
+            break;
+        case SDL_KEYUP:
+            switch(evt.key.keysym.scancode){
+                case SDL_SCANCODE_W: cameraKeyStates.forward = false; break;
+                case SDL_SCANCODE_S: cameraKeyStates.back = false; break;
+                case SDL_SCANCODE_A: cameraKeyStates.left = false; break;
+                case SDL_SCANCODE_D: cameraKeyStates.right = false; break;
+                case SDL_SCANCODE_LSHIFT: cameraKeyStates.down = false; break;
+                case SDL_SCANCODE_SPACE: cameraKeyStates.up = false; break;
+                default:
+                    break;
+            };
+            break;
+        case SDL_MOUSEMOTION:
+            camera.yaw -= evt.motion.xrel * mouseSensitivity;
+            camera.pitch -= evt.motion.yrel * mouseSensitivity;
+            break;
+    }
+    
+    sampleevent(evt);
+}
+
+void ExampleFramework::internaltick() {
+
+    camVelocity += camera.Right() * (cameraKeyStates.left * -camSpeed);
+    camVelocity += camera.Right() * (cameraKeyStates.right * camSpeed);
+
+    camVelocity += camera.Forward() * (cameraKeyStates.forward * camSpeed);
+    camVelocity += camera.Forward() * (cameraKeyStates.back * -camSpeed);
+    
+    camVelocity += camera.Up() * (cameraKeyStates.up * camSpeed);
+    camVelocity += camera.Up() * (cameraKeyStates.down * -camSpeed);
+    
+    // note: this is wrong. please don't make a camera like this
+    camVelocity.x = std::clamp(camVelocity.x, -camMaxSpeed, camMaxSpeed);
+    camVelocity.y = std::clamp(camVelocity.y, -camMaxSpeed, camMaxSpeed);
+    camVelocity.z = std::clamp(camVelocity.z, -camMaxSpeed, camMaxSpeed);
+
+    camVelocity *= camDecel;
+    camera.position += camVelocity;
+}
+
+

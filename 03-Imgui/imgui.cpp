@@ -242,7 +242,7 @@ void main(){
         }
 	}
 
-	void onevent(SDL_Event& event) final{
+	void sampleevent(SDL_Event& event) final{
 		ImGui_ImplSDL2_ProcessEvent(&event);
 	}
 

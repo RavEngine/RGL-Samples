@@ -26,11 +26,16 @@ inline float deg_to_rad(float val){
 
 struct Camera{
     glm::vec3 position{0};
+    
     float yaw = 0, pitch = 0;
     
     float FOV = 60;
     float nearClip = 0.1;
     float farClip = 100;
+    
+    static constexpr glm::vec3 vector3_right = glm::vec3(1, 0, 0);
+    static constexpr glm::vec3 vector3_up = glm::vec3(0, 1, 0);
+    static constexpr glm::vec3 vector3_forward = glm::vec3(0, 0, -1);
     
     glm::mat4 ModelMatrix() const{
         return glm::translate(glm::mat4(1), position) * (glm::toMat4(glm::quat(glm::vec3(0,yaw,0))) * glm::toMat4(glm::quat(glm::vec3(pitch,0,0))));
@@ -47,6 +52,28 @@ struct Camera{
     glm::mat4 GenerateViewProjMatrix(uint32_t width, uint32_t height){
         return GenerateProjectionMatrix(width, height) * GenerateViewMatrix();
     }
+    
+    glm::quat getRotation() const{
+        return glm::quat(glm::vec3(0,yaw,0)) * glm::quat(glm::vec3(pitch,0,0));
+    }
+    
+    inline glm::vec3 Forward() const{
+        return getRotation() * vector3_forward;
+    }
+
+    /**
+    @return the vector pointing in the up direction of this transform
+    */
+    inline glm::vec3 Up() const{
+        return getRotation() * vector3_up;
+    }
+
+    /**
+    @return the vector pointing in the right direction of this transform
+    */
+    inline glm::vec3 Right() const{
+        return getRotation() * vector3_right;
+    }
 };
 
 
@@ -59,6 +86,23 @@ struct ExampleFramework : public AppBase{
     virtual void sampleinit(int argc, char** argv) = 0;
     virtual void sampleshutdown() = 0;
     virtual void onresize(int, int) {};
+    void onevent(union SDL_Event&) final;
+    virtual void sampleevent(union SDL_Event&){};
+    void internaltick() final;
+    
+    constexpr static float camSpeed = 0.1;
+    constexpr static float camDecel = 0.9;
+    constexpr static float camMaxSpeed = 1;
+    constexpr static float mouseSensitivity = 0.005;
+    
+    struct CameraKeyStates{
+        bool forward: 1 = false;
+        bool back: 1 = false;
+        bool left: 1 = false;
+        bool right: 1 = false;
+        bool up: 1 = false;
+        bool down: 1 = false;
+    } cameraKeyStates;
 
     using clock_t = std::chrono::system_clock;
 
@@ -98,6 +142,7 @@ struct ExampleFramework : public AppBase{
     TextureData LoadImage(const std::filesystem::path& path);
     
     Camera camera;
+    glm::vec3 camVelocity{0};
     
     int width = 0, height = 0;
 };
