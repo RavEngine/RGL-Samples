@@ -27,61 +27,12 @@ struct Cubes : public ExampleFramework {
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr renderPass;
     
-    struct Vertex {
-        glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec2 uv;
-    };
-    
     struct alignas(16) UniformBufferObject {
         glm::mat4 viewProj;
-		float timeSinceStart;
+        float timeSinceStart;
         
     } ubo;
     
-    constexpr static Vertex vertices[] = {
-        {{ -1.0,  1.0,  1.0}, { 0.0,  0.0,  1.0}, {0, 0 }},
-        {{ 1.0,  1.0,  1.0}, { 0.0,  0.0,  1.0}, {1, 0 }},
-        {{ -1.0, -1.0,  1.0}, { 0.0,  0.0,  1.0}, {0, 1 }},
-        {{ 1.0, -1.0,  1.0}, { 0.0,  0.0,  1.0}, {1, 1 }},
-        {{ -1.0, 1.0, -1.0}, { 0.0,  0.0, -1.0}, {0, 0 }},
-        {{ 1.0,  1.0, -1.0}, { 0.0,  0.0, -1.0}, {1, 0 }},
-        {{ -1.0, -1.0, -1.0}, { 0.0,  0.0, -1.0}, {0, 1 }},
-        {{ 1.0, -1.0, -1.0}, { 0.0,  0.0, -1.0}, {1, 1 }},
-        {{ -1.0, 1.0,  1.0}, { 0.0,  1.0,  0.0}, {0, 0 }},
-        {{ 1.0,  1.0,  1.0}, { 0.0,  1.0,  0.0}, {1, 0 }},
-        {{ -1.0, 1.0, -1.0}, { 0.0,  1.0,  0.0}, {0, 1 }},
-        {{ 1.0,  1.0, -1.0}, { 0.0,  1.0,  0.0}, {1, 1 }},
-        {{ -1.0, -1.0,  1.0}, { 0.0, -1.0,  0.0}, {0, 0 }},
-        {{ 1.0, -1.0,  1.0}, { 0.0, -1.0,  0.0}, {1, 0 }},
-        {{ -1.0, -1.0, -1.0}, { 0.0, -1.0,  0.0}, {0, 1 }},
-        {{ 1.0, -1.0, -1.0}, { 0.0, -1.0,  0.0}, {1, 1 }},
-        {{ 1.0, -1.0,  1.0}, { 1.0,  0.0,  0.0}, {0, 0 }},
-        {{ 1.0,  1.0,  1.0}, { 1.0,  0.0,  0.0}, {1, 0 }},
-        {{ 1.0, -1.0, -1.0}, { 1.0,  0.0,  0.0}, {0, 1 }},
-        {{ 1.0,  1.0, -1.0}, { 1.0,  0.0,  0.0}, {1, 1 }},
-        {{ -1.0, -1.0,  1.0}, { -1.0,  0.0,  0.0}, {0, 0 }},
-        {{ -1.0, 1.0,  1.0}, { -1.0,  0.0,  0.0}, {1, 0 }},
-        {{ -1.0, -1.0, -1.0}, { -1.0,  0.0,  0.0}, {0, 1 }},
-        {{ -1.0, 1.0, -1.0}, { -1.0,  0.0,  0.0}, {1, 1 }},
-	};
-    constexpr static uint32_t indices[] = {
-        0,  2,  1,
-        1,  2,  3,
-        4,  5,  6,
-        5,  7,  6,
-
-        8, 10,  9,
-        9, 10, 11,
-       12, 13, 14,
-       13, 15, 14,
-
-       16, 18, 17,
-       17, 18, 19,
-       20, 21, 22,
-       21, 23, 22,
-    };
-
 	const char* SampleName() {
 		return "Cubes";
 	}
@@ -104,10 +55,10 @@ struct Cubes : public ExampleFramework {
         
 		vertexBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::VertexBuffer,
-			sizeof(Vertex),
-			vertices,
+			sizeof(BasicObjects::Cube::Vertex),
+            BasicObjects::Cube::vertices,
 		});
-		vertexBuffer->SetBufferData(vertices);
+		vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
         
         // seed the buffer with random values
         std::random_device rd;
@@ -127,10 +78,10 @@ struct Cubes : public ExampleFramework {
         
         indexBuffer = device->CreateBuffer({
             RGL::BufferConfig::Type::IndexBuffer,
-            sizeof(indices[0]),
-            indices,
+            sizeof(BasicObjects::Cube::indices[0]),
+            BasicObjects::Cube::indices,
         });
-        indexBuffer->SetBufferData(indices);
+        indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
 		auto imagedata = LoadImage("tx1.png");
 
@@ -206,25 +157,25 @@ struct Cubes : public ExampleFramework {
 			.vertexConfig = {
 				.vertexBindinDesc = {
 					.binding = 0,
-					.stride = sizeof(Vertex),
+					.stride = sizeof(BasicObjects::Cube::Vertex),
 				},
 				.attributeDescs = {
 					{
 						.location = 0,
 						.binding = 0,
-						.offset = offsetof(Vertex,pos),
+						.offset = offsetof(BasicObjects::Cube::Vertex,pos),
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					},
 					{
 						.location = 1,
 						.binding = 0,
-						.offset = offsetof(Vertex,normal),
+						.offset = offsetof(BasicObjects::Cube::Vertex,normal),
 						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
 					},
                     {
                         .location = 2,
                         .binding = 0,
-                        .offset = offsetof(Vertex,uv),
+                        .offset = offsetof(BasicObjects::Cube::Vertex,uv),
                         .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
                     }
 				}
@@ -318,7 +269,7 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
 		commandBuffer->SetCombinedTextureSampler(textureSampler, sampledTexture.get(), 0);
-		commandBuffer->DrawIndexed(std::size(indices), {
+		commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
             .nInstances = nCubes
 		});
 

@@ -101,6 +101,8 @@ macro(add_sample dir)
 		XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER "com.ravbug.${APPNAME}"		# with templated plist we can set this
 		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.ravbug.${dir}"
 		XCODE_ATTRIBUTE_CURRENTYEAR "${CURRENTYEAR}"
+		XCODE_ATTRIBUTE_MTL_ENABLE_DEBUG_INFO "INCLUDE_SOURCE"
+    	XCODE_ATTRIBUTE_MTL_LANGUAGE_REVISION "Metal24"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
 	)
 	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
@@ -197,6 +199,7 @@ endmacro()
 add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
+add_sample(04-Deferred)
 
 set_target_properties(
 	${SDLMAIN_LIB}
