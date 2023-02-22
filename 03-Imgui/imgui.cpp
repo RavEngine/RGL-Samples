@@ -308,7 +308,7 @@ void main(){
 			const ImDrawList* cmd_list = drawData->CmdLists[n];
             
             vertexBuffer->UpdateBufferData({ cmd_list->VtxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert)}, vertexBufferOffset);
-            indexBuffer->UpdateBufferData({ cmd_list->IdxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawIdx)}, indexBufferOffset);
+            indexBuffer->UpdateBufferData({ cmd_list->IdxBuffer.Data, (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx)}, indexBufferOffset);
             
 			for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 			{
