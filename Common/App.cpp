@@ -93,8 +93,13 @@ int AppBase::run(int argc, char** argv) {
 			}
             onevent(event);
 		}
+		auto now = clocktype::now();
+		auto deltaTimeMicroseconds = std::min(std::chrono::duration_cast<timeDiff>(now - lastframeTime), maxTimeStep);
+		float deltaSeconds = std::chrono::duration<decltype(deltaSeconds)>(deltaTimeMicroseconds).count();
+		currentScale = deltaSeconds * evalNormal;
         internaltick();
 		tick();
+		lastframeTime = now;
 	}
 
 	shutdown();

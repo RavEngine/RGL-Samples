@@ -201,8 +201,8 @@ void ExampleFramework::onevent(union SDL_Event & evt) {
             };
             break;
         case SDL_MOUSEMOTION:
-            camera.yaw -= evt.motion.xrel * mouseSensitivity;
-            camera.pitch -= evt.motion.yrel * mouseSensitivity;
+            camera.yaw -= evt.motion.xrel * mouseSensitivity * getCurrentScale();
+            camera.pitch -= evt.motion.yrel * mouseSensitivity * getCurrentScale();
             break;
     }
     
@@ -211,14 +211,20 @@ void ExampleFramework::onevent(union SDL_Event & evt) {
 
 void ExampleFramework::internaltick() {
 
-    camVelocity += camera.Right() * (cameraKeyStates.left * -camSpeed);
-    camVelocity += camera.Right() * (cameraKeyStates.right * camSpeed);
+    auto scale = getCurrentScale();
+    glm::vec3 newVelocity{ 0 };
+    newVelocity += camera.Right() * (cameraKeyStates.left * -camSpeed);
+    newVelocity += camera.Right() * (cameraKeyStates.right * camSpeed);
 
-    camVelocity += camera.Forward() * (cameraKeyStates.forward * camSpeed);
-    camVelocity += camera.Forward() * (cameraKeyStates.back * -camSpeed);
+    newVelocity += camera.Forward() * (cameraKeyStates.forward * camSpeed);
+    newVelocity += camera.Forward() * (cameraKeyStates.back * -camSpeed);
     
-    camVelocity += camera.Up() * (cameraKeyStates.up * camSpeed);
-    camVelocity += camera.Up() * (cameraKeyStates.down * -camSpeed);
+    newVelocity += camera.Up() * (cameraKeyStates.up * camSpeed);
+    newVelocity += camera.Up() * (cameraKeyStates.down * -camSpeed);
+
+    newVelocity *= scale;
+
+    camVelocity += newVelocity;
     
     // note: this is wrong. please don't make a camera like this
     camVelocity.x = std::clamp(camVelocity.x, -camMaxSpeed, camMaxSpeed);
