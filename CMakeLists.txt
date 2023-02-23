@@ -208,6 +208,7 @@ set_target_properties(
 	"RGL-Samples-Common"
     "fmt"
 	"stb_image"
+	"imgui"
     #"imgui"
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"

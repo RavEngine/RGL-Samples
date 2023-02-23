@@ -10,6 +10,8 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
 
 layout(location = 0) out vec2 outUV;
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec3 outWorldpos;
 
 void main() {
     const uint gridSize = 6;
@@ -31,6 +33,9 @@ void main() {
         vec4(pos, 1.0)
     );
 
+    mat3 normalmat  = transpose(mat3(model));
+
+
     float animTime = ubo.timeSinceStart * spinSpeed;
 
     mat4 rotmatx = mat4(
@@ -51,4 +56,6 @@ void main() {
     
     gl_Position = ubo.viewProj * worldpos;
     outUV = inUV;
+    outNormal = normalize(normalmat * inNormal);
+    outWorldpos = worldpos.xyz;
 }
