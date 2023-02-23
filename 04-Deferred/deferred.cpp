@@ -133,6 +133,20 @@ struct Deferred : public ExampleFramework {
         });
         
         finalRenderPipelineLayout = device->CreatePipelineLayout({
+            .bindings = {
+                {
+                    .binding = 0,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                {
+                    .binding = 1,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+            },
             .boundSamplers = {
                 textureSampler
             },
@@ -463,6 +477,8 @@ struct Deferred : public ExampleFramework {
 
         finalRenderPass.reset();
         finalRenderPipelineLayout.reset();
+        dirLightRenderPipeline.reset();
+        dirLightRenderPass.reset();
         finalRenderPipeline.reset();
         screenTriVerts.reset();
         deferredRenderPass.reset();
@@ -470,6 +486,7 @@ struct Deferred : public ExampleFramework {
         colorTexture.reset();
         positionTexture.reset();
         normalTexture.reset();
+        lightingTexture.reset();
         textureSampler.reset();
         commandBuffer.reset();
         commandQueue.reset();
