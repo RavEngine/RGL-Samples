@@ -5,11 +5,6 @@ layout(push_constant) uniform UniformBufferObject{
     float timeSinceStart;
 } ubo;
 
-layout(std430, binding = 2) readonly buffer cubeSpeedsBuffer
-{
-    float cubeSpeeds[];
-};
-
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
@@ -27,7 +22,7 @@ void main() {
 
     const float scaleFactor = 1;
 
-    float spinSpeed = cubeSpeeds[gl_InstanceID];
+    float spinSpeed = 1.0;
 
     mat4 model = mat4(
         vec4(scaleFactor, 0.0, 0.0, 0.0),
