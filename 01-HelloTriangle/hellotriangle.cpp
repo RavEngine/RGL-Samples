@@ -22,11 +22,8 @@ struct HelloWorld : public AppBase {
 	RGLDevicePtr device;
 	RGLSurfacePtr surface;
 	RGLSwapchainPtr swapchain;
-	RGLPipelineLayoutPtr renderPipelineLayout;
 	RGLRenderPipelinePtr renderPipeline;
 	RGLBufferPtr vertexBuffer;
-
-	RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
 
 	RGLCommandQueuePtr commandQueue;
 	RGLCommandBufferPtr commandBuffer;
@@ -124,12 +121,12 @@ struct HelloWorld : public AppBase {
 		};
 
 #if __APPLE__
-        vertexShaderLibrary = device->CreateShaderLibraryFromName("triangle_vert");
-        fragmentShaderLibrary = device->CreateShaderLibraryFromName("triangle_frag");
+        RGLShaderLibraryPtr vertexShaderLibrary = device->CreateShaderLibraryFromName("triangle_vert");
+        RGLShaderLibraryPtr fragmentShaderLibrary = device->CreateShaderLibraryFromName("triangle_frag");
 #else
 		// load our shaders
-		vertexShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.vert"));
-		fragmentShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.frag"));
+        RGLShaderLibraryPtr vertexShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.vert"));
+        RGLShaderLibraryPtr fragmentShaderLibrary = device->CreateShaderLibraryFromPath(getShaderPathname("triangle.frag"));
 #endif
 
 		vertexBuffer = device->CreateBuffer({
@@ -143,64 +140,62 @@ struct HelloWorld : public AppBase {
 		RGL::PipelineLayoutDescriptor layoutConfig{
 			.constants = {{ ubo, 0}}
 		};
-		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
-
-
+		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+        
 		// create a render pipeline
-		RGL::RenderPipelineDescriptor rpd{
-			.stages = {
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
-					.shaderModule = vertexShaderLibrary,
-				},
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
-					.shaderModule = fragmentShaderLibrary,
-				}
-			},
-			.vertexConfig = {
-				.vertexBindinDesc = {
-					.binding = 0,
-					.stride = sizeof(Vertex),
-				},
-				.attributeDescs = {
-					{
-						.location = 0,
-						.binding = 0,
-						.offset = offsetof(Vertex,pos),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
-					},
-					{
-						.location = 1,
-						.binding = 0,
-						.offset = offsetof(Vertex,color),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-					}
-				}
-			},
-			.inputAssembly = {
-				.topology = RGL::PrimitiveTopology::TriangleList,
-			},
-			.viewport = {
-				.width = (float)width,
-				.height = (float)height
-			},
-			.scissor = {
-				.extent = {width, height}
-			},
-			.rasterizerConfig = {
-				.windingOrder = decltype(rpd)::RasterizerConfig::WindingOrder::Counterclockwise,
-			},
-			.colorBlendConfig{
-				.attachments = {
-					{
-						.format = RGL::TextureFormat::BGRA8_Unorm	// specify attachment data
-					}
-				}
-			},
-			.pipelineLayout = renderPipelineLayout,
-		};
-		renderPipeline = device->CreateRenderPipeline(rpd);
+		renderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = vertexShaderLibrary,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = fragmentShaderLibrary,
+                }
+            },
+            .vertexConfig = {
+                .vertexBindinDesc = {
+                    .binding = 0,
+                    .stride = sizeof(Vertex),
+                },
+                .attributeDescs = {
+                    {
+                        .location = 0,
+                        .binding = 0,
+                        .offset = offsetof(Vertex,pos),
+                        .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                    },
+                    {
+                        .location = 1,
+                        .binding = 0,
+                        .offset = offsetof(Vertex,color),
+                        .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                    }
+                }
+            },
+            .inputAssembly = {
+                .topology = RGL::PrimitiveTopology::TriangleList,
+            },
+            .viewport = {
+                .width = (float)width,
+                .height = (float)height
+            },
+            .scissor = {
+                .extent = {width, height}
+            },
+            .rasterizerConfig = {
+                .windingOrder = RGL::WindingOrder::Counterclockwise,
+            },
+            .colorBlendConfig{
+                .attachments = {
+                    {
+                        .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
+                    }
+                }
+            },
+            .pipelineLayout = renderPipelineLayout,
+        });
         
 		renderPass = RGL::CreateRenderPass({
 			.attachments = {
@@ -278,11 +273,7 @@ struct HelloWorld : public AppBase {
 
 		vertexBuffer.reset();
 
-		vertexShaderLibrary.reset();
-		fragmentShaderLibrary.reset();
-
 		renderPipeline.reset();
-		renderPipelineLayout.reset();
 		swapchainFence.reset();
 		swapchain.reset();
 		surface.reset();

@@ -17,12 +17,9 @@
 #undef LoadImage
 
 struct ImGuiDemo : public ExampleFramework {
-	RGLPipelineLayoutPtr renderPipelineLayout;
     RGLRenderPipelinePtr renderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
-    
-    RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
-    
+        
     RGLCommandBufferPtr commandBuffer;
 	RGLTexturePtr fontsTexture, depthTexture;
     RGLSamplerPtr textureSampler;
@@ -84,8 +81,8 @@ void main(){
 }
 )";
         
-        vertexShaderLibrary = device->CreateShaderLibrarySourceCode(vertShader, {.stage = RGL::ShaderStage::Vertex});
-        fragmentShaderLibrary = device->CreateShaderLibrarySourceCode(fragShader, {.stage = RGL::ShaderStage::Fragment});
+        auto vertexShaderLibrary = device->CreateShaderLibrarySourceCode(vertShader, {.stage = RGL::ShaderStage::Vertex});
+        auto fragmentShaderLibrary = device->CreateShaderLibrarySourceCode(fragShader, {.stage = RGL::ShaderStage::Fragment});
     
 		textureSampler = device->CreateSampler({});
 
@@ -111,80 +108,79 @@ void main(){
 			},
 			.constants = {{ ubo, 0}}
 		};
-		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
 
 		// create a render pipeline
-		RGL::RenderPipelineDescriptor rpd{
-			.stages = {
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
-					.shaderModule = vertexShaderLibrary,
-				},
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
-					.shaderModule = fragmentShaderLibrary,
-				}
-			},
-			.vertexConfig = {
-				.vertexBindinDesc = {
-					.binding = 0,
-					.stride = sizeof(ImDrawVert),
-				},
-				.attributeDescs = {
-					{
-						.location = 0,
-						.binding = 0,
-						.offset = offsetof(ImDrawVert,pos),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
-					},
+		renderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = vertexShaderLibrary,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = fragmentShaderLibrary,
+                }
+            },
+            .vertexConfig = {
+                .vertexBindinDesc = {
+                    .binding = 0,
+                    .stride = sizeof(ImDrawVert),
+                },
+                .attributeDescs = {
+                    {
+                        .location = 0,
+                        .binding = 0,
+                        .offset = offsetof(ImDrawVert,pos),
+                        .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                    },
                     {
                         .location = 1,
                         .binding = 0,
                         .offset = offsetof(ImDrawVert,uv),
-                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+                        .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                     },
                     {
                         .location = 2,
                         .binding = 0,
                         .offset = offsetof(ImDrawVert,col),
-                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32_Uint,
+                        .format = RGL::VertexAttributeFormat::R32_Uint,
                     },
-				}
-			},
-			.inputAssembly = {
-				.topology = RGL::PrimitiveTopology::TriangleList,
-			},
-			.viewport = {
-				.width = (float)width,
-				.height = (float)height
-			},
-			.scissor = {
-				.extent = {width, height}
-			},
-			.rasterizerConfig = {
-				.windingOrder = decltype(rpd)::RasterizerConfig::WindingOrder::Counterclockwise,
-			},
-			.colorBlendConfig{
-				.attachments = {
-					{
-						.format = RGL::TextureFormat::BGRA8_Unorm,	// specify attachment data
+                }
+            },
+            .inputAssembly = {
+                .topology = RGL::PrimitiveTopology::TriangleList,
+            },
+            .viewport = {
+                .width = (float)width,
+                .height = (float)height
+            },
+            .scissor = {
+                .extent = {width, height}
+            },
+            .rasterizerConfig = {
+                .windingOrder = RGL::WindingOrder::Counterclockwise,
+            },
+            .colorBlendConfig{
+                .attachments = {
+                    {
+                        .format = RGL::TextureFormat::BGRA8_Unorm,    // specify attachment data
                  
                         .sourceColorBlendFactor = RGL::BlendFactor::SourceAlpha,
                         .destinationColorBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
                         .sourceAlphaBlendFactor = RGL::BlendFactor::One,
                         .destinationAlphaBlendFactor = RGL::BlendFactor::OneMinusSourceAlpha,
 
-						.colorBlendOperation = RGL::BlendOperation::Add,
-						.alphaBlendOperation = RGL::BlendOperation::Add,
+                        .colorBlendOperation = RGL::BlendOperation::Add,
+                        .alphaBlendOperation = RGL::BlendOperation::Add,
 
                         .blendEnabled = true
-					}
-				}
-			},
-			.pipelineLayout = renderPipelineLayout,
-		};
-		renderPipeline = device->CreateRenderPipeline(rpd);
+                    }
+                }
+            },
+            .pipelineLayout = renderPipelineLayout,
+        });
         
 		renderPass = RGL::CreateRenderPass({
 			.attachments = {
@@ -399,11 +395,7 @@ void main(){
 		vertexBuffer.reset();
 		indexBuffer.reset();
 
-		vertexShaderLibrary.reset();
-		fragmentShaderLibrary.reset();
-
 		renderPipeline.reset();
-		renderPipelineLayout.reset();
 	}
 };
 

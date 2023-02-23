@@ -16,12 +16,9 @@ constexpr static uint32_t nCubes = 36;
 static float cubeSpinSpeeds [nCubes]{0};
 
 struct Cubes : public ExampleFramework {
-	RGLPipelineLayoutPtr renderPipelineLayout;
     RGLRenderPipelinePtr renderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
-    
-    RGLShaderLibraryPtr vertexShaderLibrary, fragmentShaderLibrary;
-    
+        
     RGLCommandBufferPtr commandBuffer;
 	RGLTexturePtr sampledTexture, depthTexture;
     RGLSamplerPtr textureSampler;
@@ -50,8 +47,8 @@ struct Cubes : public ExampleFramework {
 	}
 	void sampleinit(int argc, char** argv) final {
         
-        vertexShaderLibrary = GetShader("cubes.vert");
-        fragmentShaderLibrary = GetShader("cubes.frag");
+        auto vertexShaderLibrary = GetShader("cubes.vert");
+        auto fragmentShaderLibrary = GetShader("cubes.frag");
         
 		vertexBuffer = device->CreateBuffer({
 			RGL::BufferConfig::Type::VertexBuffer,
@@ -127,7 +124,7 @@ struct Cubes : public ExampleFramework {
 			},
 			.constants = {{ ubo, 0}}
 		};
-		renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
 
 		// then give the layout the data for it to represent
@@ -143,72 +140,71 @@ struct Cubes : public ExampleFramework {
 
 
 		// create a render pipeline
-		RGL::RenderPipelineDescriptor rpd{
-			.stages = {
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Vertex,
-					.shaderModule = vertexShaderLibrary,
-				},
-				{
-					.type = decltype(rpd)::ShaderStageDesc::Type::Fragment,
-					.shaderModule = fragmentShaderLibrary,
-				}
-			},
-			.vertexConfig = {
-				.vertexBindinDesc = {
-					.binding = 0,
-					.stride = sizeof(BasicObjects::Cube::Vertex),
-				},
-				.attributeDescs = {
-					{
-						.location = 0,
-						.binding = 0,
-						.offset = offsetof(BasicObjects::Cube::Vertex,pos),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-					},
-					{
-						.location = 1,
-						.binding = 0,
-						.offset = offsetof(BasicObjects::Cube::Vertex,normal),
-						.format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-					},
+		renderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = vertexShaderLibrary,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = fragmentShaderLibrary,
+                }
+            },
+            .vertexConfig = {
+                .vertexBindinDesc = {
+                    .binding = 0,
+                    .stride = sizeof(BasicObjects::Cube::Vertex),
+                },
+                .attributeDescs = {
+                    {
+                        .location = 0,
+                        .binding = 0,
+                        .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                        .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                    },
+                    {
+                        .location = 1,
+                        .binding = 0,
+                        .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                        .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                    },
                     {
                         .location = 2,
                         .binding = 0,
                         .offset = offsetof(BasicObjects::Cube::Vertex,uv),
-                        .format = decltype(rpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
+                        .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                     }
-				}
-			},
-			.inputAssembly = {
-				.topology = RGL::PrimitiveTopology::TriangleList,
-			},
-			.viewport = {
-				.width = (float)width,
-				.height = (float)height
-			},
-			.scissor = {
-				.extent = {width, height}
-			},
-			.rasterizerConfig = {
-				.windingOrder = decltype(rpd)::RasterizerConfig::WindingOrder::Counterclockwise,
-			},
-			.colorBlendConfig{
-				.attachments = {
-					{
-						.format = RGL::TextureFormat::BGRA8_Unorm	// specify attachment data
-					}
-				}
-			},
-			.depthStencilConfig = {
-				.depthFormat = RGL::TextureFormat::D32SFloat,
-				.depthTestEnabled = true,
-				.depthWriteEnabled = true,
-				.depthFunction = RGL::DepthCompareFunction::Less,
-			},
-			.pipelineLayout = renderPipelineLayout,
-		};
-		renderPipeline = device->CreateRenderPipeline(rpd);
+                }
+            },
+            .inputAssembly = {
+                .topology = RGL::PrimitiveTopology::TriangleList,
+            },
+            .viewport = {
+                .width = (float)width,
+                .height = (float)height
+            },
+            .scissor = {
+                .extent = {width, height}
+            },
+            .rasterizerConfig = {
+                .windingOrder = RGL::WindingOrder::Counterclockwise,
+            },
+            .colorBlendConfig{
+                .attachments = {
+                    {
+                        .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
+                    }
+                }
+            },
+            .depthStencilConfig = {
+                .depthFormat = RGL::TextureFormat::D32SFloat,
+                .depthTestEnabled = true,
+                .depthWriteEnabled = true,
+                .depthFunction = RGL::DepthCompareFunction::Less,
+            },
+            .pipelineLayout = renderPipelineLayout,
+        });
         
 		renderPass = RGL::CreateRenderPass({
 			.attachments = {
@@ -302,11 +298,7 @@ struct Cubes : public ExampleFramework {
 		vertexBuffer.reset();
 		indexBuffer.reset();
 
-		vertexShaderLibrary.reset();
-		fragmentShaderLibrary.reset();
-
 		renderPipeline.reset();
-		renderPipelineLayout.reset();
 	}
 };
 

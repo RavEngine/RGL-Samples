@@ -17,15 +17,13 @@ static float cubeSpinSpeeds [nCubes]{0};
 
 struct Deferred : public ExampleFramework {
     RGLPipelineLayoutPtr deferredRenderPipelineLayout, finalRenderPipelineLayout;
-    RGLRenderPipelinePtr deferredRenderPipeline, finalRenderPipeline;
+    RGLRenderPipelinePtr deferredRenderPipeline, dirLightRenderPipeline, finalRenderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts;
-    
-    RGLShaderLibraryPtr deferredVertexShader, deferredFragmentShader, finalVertexShader, finalFragmentShader;
-    
+        
     RGLCommandBufferPtr commandBuffer;
-    RGLTexturePtr depthTexture, colorTexture, normalTexture, positionTexture;
+    RGLTexturePtr depthTexture, colorTexture, normalTexture, positionTexture, lightingTexture;
     RGLSamplerPtr textureSampler;
-    RGLRenderPassPtr deferredRenderPass, finalRenderPass;
+    RGLRenderPassPtr deferredRenderPass, dirLightRenderPass, finalRenderPass;
     
     constexpr static RGL::TextureFormat
         posTexFormat = RGL::TextureFormat::RGBA32_Float,
@@ -77,15 +75,23 @@ struct Deferred : public ExampleFramework {
             .format = posTexFormat
             }
         );
-        
+        lightingTexture = device->CreateTexture({
+            .usage = RGL::TextureUsage::ColorAttachment,
+            .aspect = RGL::TextureAspect::HasColor,
+            .width = (uint32_t)width,
+            .height = (uint32_t)height,
+            .format = colorTexFormat
+            }
+        );
     }
     void sampleinit(int argc, char** argv) final {
         
-        deferredVertexShader = GetShader("deferred.vert");
-        deferredFragmentShader = GetShader("deferred.frag");
+        auto deferredVertexShader = GetShader("deferred.vert");
+        auto deferredFragmentShader = GetShader("deferred.frag");
         
-        finalVertexShader = GetShader("final.vert");
-        finalFragmentShader = GetShader("final.frag");
+        auto screenTriVertexShader = GetShader("screentri.vert");
+        auto dirLightFragmentShader = GetShader("dirlight.frag");
+        auto finalFragmentShader = GetShader("final.frag");
         
         vertexBuffer = device->CreateBuffer({
             RGL::BufferConfig::Type::VertexBuffer,
@@ -132,133 +138,174 @@ struct Deferred : public ExampleFramework {
             },
         });
     
-
         // create render pipelines
-        {
-            RGL::RenderPipelineDescriptor drpd{
-                .stages = {
-                    {
-                        .type = decltype(drpd)::ShaderStageDesc::Type::Vertex,
-                        .shaderModule = deferredVertexShader,
-                    },
-                    {
-                        .type = decltype(drpd)::ShaderStageDesc::Type::Fragment,
-                        .shaderModule = deferredFragmentShader,
-                    }
+        deferredRenderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = deferredVertexShader,
                 },
-                    .vertexConfig = {
-                        .vertexBindinDesc = {
-                            .binding = 0,
-                            .stride = sizeof(BasicObjects::Cube::Vertex),
-                        },
-                            .attributeDescs = {
-                                {
-                                    .location = 0,
-                                    .binding = 0,
-                                    .offset = offsetof(BasicObjects::Cube::Vertex,pos),
-                                    .format = decltype(drpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-                                },
-                                {
-                                    .location = 1,
-                                    .binding = 0,
-                                    .offset = offsetof(BasicObjects::Cube::Vertex,normal),
-                                    .format = decltype(drpd)::VertexConfig::VertexAttributeDesc::Format::R32G32B32_SignedFloat,
-                                },
-                                {
-                                    .location = 2,
-                                    .binding = 0,
-                                    .offset = offsetof(BasicObjects::Cube::Vertex,uv),
-                                    .format = decltype(drpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
-                                }
-                            }
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = deferredFragmentShader,
+                }
+            },
+                .vertexConfig = {
+                    .vertexBindinDesc = {
+                        .binding = 0,
+                        .stride = sizeof(BasicObjects::Cube::Vertex),
                     },
-                    .inputAssembly = {
-                        .topology = RGL::PrimitiveTopology::TriangleList,
-                    },
-                    .viewport = {
-                        .width = (float)width,
-                        .height = (float)height
-                    },
-                    .scissor = {
-                        .extent = {width, height}
-                    },
-                    .rasterizerConfig = {
-                        .windingOrder = decltype(drpd)::RasterizerConfig::WindingOrder::Counterclockwise,
-                    },
-                    .colorBlendConfig{
-                        .attachments = {
+                        .attributeDescs = {
                             {
-                                .format = colorTexFormat
+                                .location = 0,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
                             },
                             {
-                                .format = normalTexFormat
+                                .location = 1,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
                             },
                             {
-                                .format = posTexFormat
+                                .location = 2,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::Cube::Vertex,uv),
+                                .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                             }
                         }
-                    },
-                    .depthStencilConfig = {
-                        .depthFormat = RGL::TextureFormat::D32SFloat,
-                        .depthTestEnabled = true,
-                        .depthWriteEnabled = true,
-                        .depthFunction = RGL::DepthCompareFunction::Less,
-                    },
-                    .pipelineLayout = deferredRenderPipelineLayout,
-            };
-            deferredRenderPipeline = device->CreateRenderPipeline(drpd);
-        }
+                },
+                .inputAssembly = {
+                    .topology = RGL::PrimitiveTopology::TriangleList,
+                },
+                .viewport = {
+                    .width = (float)width,
+                    .height = (float)height
+                },
+                .scissor = {
+                    .extent = {width, height}
+                },
+                .rasterizerConfig = {
+                    .windingOrder = RGL::WindingOrder::Counterclockwise,
+                },
+                .colorBlendConfig{
+                    .attachments = {
+                        {
+                            .format = colorTexFormat
+                        },
+                        {
+                            .format = normalTexFormat
+                        },
+                        {
+                            .format = posTexFormat
+                        }
+                    }
+                },
+                .depthStencilConfig = {
+                    .depthFormat = RGL::TextureFormat::D32SFloat,
+                    .depthTestEnabled = true,
+                    .depthWriteEnabled = true,
+                    .depthFunction = RGL::DepthCompareFunction::Less,
+                },
+                .pipelineLayout = deferredRenderPipelineLayout,
+        });
         
-        {
-            RGL::RenderPipelineDescriptor drpd{
-                .stages = {
-                    {
-                        .type = decltype(drpd)::ShaderStageDesc::Type::Vertex,
-                        .shaderModule = finalVertexShader,
+        finalRenderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = screenTriVertexShader,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = finalFragmentShader,
+                }
+            },
+                .vertexConfig = {
+                    .vertexBindinDesc = {
+                        .binding = 0,
+                        .stride = sizeof(BasicObjects::ScreenTriangle::Vertex),
                     },
-                    {
-                        .type = decltype(drpd)::ShaderStageDesc::Type::Fragment,
-                        .shaderModule = finalFragmentShader,
+                        .attributeDescs = {
+                            {
+                                .location = 0,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::ScreenTriangle::Vertex,pos),
+                                .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                            },
+                        }
+                },
+                .inputAssembly = {
+                    .topology = RGL::PrimitiveTopology::TriangleList,
+                },
+                .viewport = {
+                    .width = (float)width,
+                    .height = (float)height
+                },
+                .scissor = {
+                    .extent = {width, height}
+                },
+                .rasterizerConfig = {
+                    .windingOrder = RGL::WindingOrder::Counterclockwise,
+                },
+                .colorBlendConfig{
+                    .attachments = {
+                        {
+                            .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
+                        }
                     }
                 },
-                    .vertexConfig = {
-                        .vertexBindinDesc = {
-                            .binding = 0,
-                            .stride = sizeof(BasicObjects::Cube::Vertex),
-                        },
-                            .attributeDescs = {
-                                {
-                                    .location = 0,
-                                    .binding = 0,
-                                    .offset = offsetof(BasicObjects::ScreenTriangle::Vertex,pos),
-                                    .format = decltype(drpd)::VertexConfig::VertexAttributeDesc::Format::R32G32_SignedFloat,
-                                },
-                            }
+                .pipelineLayout = finalRenderPipelineLayout,
+        });
+        
+        dirLightRenderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = screenTriVertexShader,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = dirLightFragmentShader,
+                }
+            },
+                .vertexConfig = {
+                    .vertexBindinDesc = {
+                        .binding = 0,
+                        .stride = sizeof(BasicObjects::ScreenTriangle::Vertex),
                     },
-                    .inputAssembly = {
-                        .topology = RGL::PrimitiveTopology::TriangleList,
-                    },
-                    .viewport = {
-                        .width = (float)width,
-                        .height = (float)height
-                    },
-                    .scissor = {
-                        .extent = {width, height}
-                    },
-                    .rasterizerConfig = {
-                        .windingOrder = decltype(drpd)::RasterizerConfig::WindingOrder::Counterclockwise,
-                    },
-                    .colorBlendConfig{
-                        .attachments = {
+                        .attributeDescs = {
                             {
-                                .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
-                            }
+                                .location = 0,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::ScreenTriangle::Vertex,pos),
+                                .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                            },
                         }
-                    },
-                    .pipelineLayout = finalRenderPipelineLayout,
-            };
-            finalRenderPipeline = device->CreateRenderPipeline(drpd);
-        }
+                },
+                .inputAssembly = {
+                    .topology = RGL::PrimitiveTopology::TriangleList,
+                },
+                .viewport = {
+                    .width = (float)width,
+                    .height = (float)height
+                },
+                .scissor = {
+                    .extent = {width, height}
+                },
+                .rasterizerConfig = {
+                    .windingOrder = RGL::WindingOrder::Counterclockwise,
+                },
+                .colorBlendConfig{
+                    .attachments = {
+                        {
+                            .format = colorTexFormat    // specify attachment data
+                        }
+                    }
+                },
+                .pipelineLayout = finalRenderPipelineLayout,
+        });
         
         deferredRenderPass = RGL::CreateRenderPass({
             .attachments = {
@@ -273,13 +320,13 @@ struct Deferred : public ExampleFramework {
                     .format = normalTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .shouldTransition = true
+                    .shouldTransition = false
                 },
                 {
                     .format = posTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .shouldTransition = true
+                    .shouldTransition = false
                 }
 
             },
@@ -289,6 +336,17 @@ struct Deferred : public ExampleFramework {
                 .storeOp = RGL::StoreAccessOperation::Store,
                 .clearColor = {1,1,1,1}
             }
+        });
+        
+        dirLightRenderPass = RGL::CreateRenderPass({
+            .attachments = {
+                {
+                    .format = colorTexFormat,
+                    .loadOp = RGL::LoadAccessOperation::Clear,
+                    .storeOp = RGL::StoreAccessOperation::Store,
+                    .shouldTransition = false
+                }
+            },
         });
         
         finalRenderPass = RGL::CreateRenderPass({
@@ -309,6 +367,7 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
 
+        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
@@ -347,6 +406,20 @@ struct Deferred : public ExampleFramework {
             .nInstances = nCubes
         });
         commandBuffer->EndRendering();
+        
+        // then do the lighting pass
+        commandBuffer->BeginRendering(dirLightRenderPass);
+        commandBuffer->BindPipeline(dirLightRenderPipeline);
+        commandBuffer->SetViewport({
+            .width = static_cast<float>(nextImgSize.width),
+            .height = static_cast<float>(nextImgSize.height),
+        });
+        commandBuffer->SetScissor({
+            .extent = {nextImgSize.width, nextImgSize.height}
+        });
+        commandBuffer->SetVertexBuffer(screenTriVerts);
+        commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
+        commandBuffer->EndRendering();
 
         // next do the final render
         finalRenderPass->SetAttachmentTexture(0, nextimg);
@@ -382,12 +455,12 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
         deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
+        
+        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
     }
 
     void sampleshutdown() final {
 
-        finalVertexShader.reset();
-        finalFragmentShader.reset();
         finalRenderPass.reset();
         finalRenderPipelineLayout.reset();
         finalRenderPipeline.reset();
@@ -403,9 +476,6 @@ struct Deferred : public ExampleFramework {
 
         vertexBuffer.reset();
         indexBuffer.reset();
-
-        deferredVertexShader.reset();
-        deferredFragmentShader.reset();
 
         deferredRenderPipeline.reset();
         deferredRenderPipelineLayout.reset();
