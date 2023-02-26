@@ -35,6 +35,7 @@ add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
 add_subdirectory(deps/imgui-cmake EXCLUDE_FROM_ALL)
+add_subdirectory(deps/OpenXR-SDK EXCLUDE_FROM_ALL)
 
 if(CMAKE_CROSSCOMPILING)
 	set(RGL_ENABLE_RGLC OFF CACHE INTERNAL "")
@@ -200,6 +201,12 @@ add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
+add_sample(05-XR)
+
+target_link_libraries(05-XR
+	PUBLIC
+		openxr_loader
+)
 
 set_target_properties(
 	${SDLMAIN_LIB}
@@ -209,7 +216,9 @@ set_target_properties(
     "fmt"
 	"stb_image"
 	"imgui"
-    #"imgui"
+	"xr_global_generated_files"
+	"generate_openxr_header"
+	"openxr_loader"
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
 )
