@@ -170,8 +170,11 @@ struct Cubes : public ExampleFramework {
 		uint32_t view_count = 0;
 		XR_CHECK(xrEnumerateViewConfigurationViews(xr.instance, xr.systemId, view_type, 0, &view_count, NULL));
 		xr.viewConfigurationViews.resize(view_count, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
+		XR_CHECK(xrEnumerateViewConfigurationViews(xr.instance, xr.systemId, view_type, view_count, &view_count, xr.viewConfigurationViews.data()));
 
 		// check graphics requirements. OpenXR requires that we call this before creating a session.
+		auto devicedata = device->GetDeviceData();
+		auto queuedata = commandQueue->GetQueueData();
 		if (currentAPI == RGL::API::Direct3D12) {
 			XrGraphicsRequirementsD3D12KHR d3d12_reqs{
 				.type = XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR,
@@ -180,8 +183,12 @@ struct Cubes : public ExampleFramework {
 			PFN_xrGetD3D12GraphicsRequirementsKHR pfn_xrGetD3D12GraphicsRequirementsKHR = nullptr;
 			XR_CHECK(xrGetInstanceProcAddr(xr.instance, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfn_xrGetD3D12GraphicsRequirementsKHR));
 			XR_CHECK(pfn_xrGetD3D12GraphicsRequirementsKHR(xr.instance, xr.systemId, &d3d12_reqs));
+
+
 			xr.graphicsBinding.d3d12Binding = XrGraphicsBindingD3D12KHR{
-				.type = XR_TYPE_GRAPHICS_BINDING_D3D12_KHR
+				.type = XR_TYPE_GRAPHICS_BINDING_D3D12_KHR,
+				.device = devicedata.d3d12Data.device,
+				.queue = queuedata.d3d12Data.commandQueue
 			};
 		}
 		else if (currentAPI == RGL::API::Vulkan) {
@@ -193,7 +200,8 @@ struct Cubes : public ExampleFramework {
 			XR_CHECK(xrGetInstanceProcAddr(xr.instance, "PFN_xrGetVulkanGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfn_xrGetVulkanGraphicsRequirementsKHR));
 			XR_CHECK(pfn_xrGetVulkanGraphicsRequirementsKHR(xr.instance, xr.systemId, &vk_reqs));
 			xr.graphicsBinding.vkBinding = XrGraphicsBindingVulkan2KHR{
-				.type = XR_TYPE_GRAPHICS_BINDING_VULKAN2_KHR
+				.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR,
+				.device = *(VkDevice*)(devicedata.vkData.device)
 			};
 		}
 		
