@@ -5,6 +5,7 @@
 #include <RGL/Texture.hpp>
 #include <RGL/Sampler.hpp>
 #include <RGL/RenderPass.hpp>
+#include <RGL/../../src/D3D12Texture.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -22,6 +23,11 @@
 #include <openxr/openxr_platform.h>
 
 struct Cubes : public ExampleFramework {
+	struct alignas(16) UniformBufferObject {
+		glm::mat4 viewProj;
+		float timeSinceStart;
+
+	} ubo;
 	float nearZ = 0.1, farZ = 100;
 	struct {
 		// required for all XR apps
@@ -78,6 +84,9 @@ struct Cubes : public ExampleFramework {
 		XrDebugUtilsMessengerEXT debugMessenger;
 		XrViewConfigurationType viewConfigurationType;
 
+		inline static PFN_xrCreateDebugUtilsMessengerEXT ext_xrCreateDebugUtilsMessengerEXT = nullptr;
+		inline static PFN_xrDestroyDebugUtilsMessengerEXT ext_xrDestroyDebugUtilsMessengerEXT = nullptr;
+
 		static constexpr XrPosef identity_pose{ 
 			.orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
 			.position = {.x = 0, .y = 0, .z = 0}
@@ -132,7 +141,10 @@ struct Cubes : public ExampleFramework {
 			Fatal("OpenXR Runtime does not support the selected API");
 		}
 
-		const char* enabled_exts[] = {currentAPI == RGL::API::Direct3D12 ? XR_KHR_D3D12_ENABLE_EXTENSION_NAME : XR_KHR_VULKAN_ENABLE_EXTENSION_NAME};
+		const char* enabled_exts[] = {
+			currentAPI == RGL::API::Direct3D12 ? XR_KHR_D3D12_ENABLE_EXTENSION_NAME : XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+			XR_EXT_DEBUG_UTILS_EXTENSION_NAME
+		};
 
 		// create the Xr instance
 		XrInstanceCreateInfo xrCreateInfo{
@@ -153,6 +165,34 @@ struct Cubes : public ExampleFramework {
 		};
 
 		XR_CHECK(xrCreateInstance(&xrCreateInfo, &xr.instance));
+
+		// setup debug messenger
+		XR_CHECK(xrGetInstanceProcAddr(xr.instance, "xrCreateDebugUtilsMessengerEXT", (PFN_xrVoidFunction*)(&xr.ext_xrCreateDebugUtilsMessengerEXT)));
+		XR_CHECK(xrGetInstanceProcAddr(xr.instance, "xrDestroyDebugUtilsMessengerEXT", (PFN_xrVoidFunction*)(&xr.ext_xrDestroyDebugUtilsMessengerEXT)));
+
+		// create debug log
+		XrDebugUtilsMessengerCreateInfoEXT debug_info = { XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+
+		debug_info.messageTypes =
+			XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT;
+		debug_info.messageSeverities =
+			XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+			XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		debug_info.userCallback = [](XrDebugUtilsMessageSeverityFlagsEXT severity, XrDebugUtilsMessageTypeFlagsEXT types, const XrDebugUtilsMessengerCallbackDataEXT* msg, void* user_data) {
+
+			OutputDebugStringA(std::format("[OpenXR] {}: {}", msg->functionName, msg->message).c_str());
+
+			// Returning XR_TRUE here will force the calling function to fail
+			return (XrBool32)XR_FALSE;
+		};
+		// start debug utils
+		if (xr.ext_xrCreateDebugUtilsMessengerEXT)
+			xr.ext_xrCreateDebugUtilsMessengerEXT(xr.instance, &debug_info, &xr.debugMessenger);
 
 		// create the Xr system for a HMD
 		XrSystemGetInfo system_get_info{
@@ -371,11 +411,6 @@ struct Cubes : public ExampleFramework {
 	RGLTexturePtr depthTexture;
 	RGLRenderPassPtr renderPass;
 
-	struct alignas(16) UniformBufferObject {
-		glm::mat4 viewProj;
-		float timeSinceStart;
-
-	} ubo;
 
 	const char* SampleName() {
 		return "OpenXR";
@@ -505,39 +540,144 @@ struct Cubes : public ExampleFramework {
 		camera.position.z = 10;
 	}
 	void tick() final {
-		ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
+		
 		ubo.timeSinceStart = getTimeSeconds();
 
+		// xr frame wait
+		XrFrameState frameState{
+			.type = XR_TYPE_FRAME_STATE,
+			.next = nullptr
+		};
+		XrFrameWaitInfo frameWaitInfo{
+			.type = XR_TYPE_FRAME_WAIT_INFO,
+			.next = nullptr
+		};
+		XR_CHECK(xrWaitFrame(xr.session, &frameWaitInfo, &frameState));
+
+		// get viewproj for the headset
+		XrViewLocateInfo viewLocateInfo{
+			.type = XR_TYPE_VIEW_LOCATE_INFO,
+			.next = nullptr,
+			.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+			.displayTime = frameState.predictedDisplayTime,
+			.space = xr.space
+		};
+		uint32_t view_count = xr.viewConfigurationViews.size();
+		std::vector<XrView> views{ view_count, {.type = XR_TYPE_VIEW, .next = nullptr } };	// note: avoid making vectors every frame
+		XrViewState viewState{
+			.type = XR_TYPE_VIEW_STATE,
+			.next = nullptr,
+		};
+		XR_CHECK(xrLocateViews(xr.session, &viewLocateInfo, &viewState, view_count, &view_count, views.data()));
+
+		// begin frame
+		XrFrameBeginInfo frameBeginInfo{
+			.type = XR_TYPE_FRAME_BEGIN_INFO,
+			.next = nullptr,
+		};
+		XR_CHECK(xrBeginFrame(xr.session, &frameBeginInfo));
+
+		commandBuffer->Reset();
+		commandBuffer->Begin();
+
+		auto render = [this](RGL::ITexture* nextimg, RGL::ITexture* depthTexture) {
+
+			auto nextImgSize = nextimg->GetSize();
+			renderPass->SetAttachmentTexture(0, nextimg);
+			renderPass->SetDepthAttachmentTexture(depthTexture);	// we recreated it so we need to reset it
+
+			commandBuffer->BeginRendering(renderPass);
+
+			commandBuffer->SetViewport({
+					.width = static_cast<float>(nextImgSize.width),
+					.height = static_cast<float>(nextImgSize.height),
+				});
+			commandBuffer->SetScissor({
+					.extent = {nextImgSize.width, nextImgSize.height}
+				});
+
+			commandBuffer->BindPipeline(renderPipeline);
+			commandBuffer->SetVertexBytes(ubo, 0);
+			commandBuffer->SetVertexBuffer(vertexBuffer);
+			commandBuffer->SetIndexBuffer(indexBuffer);
+			commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
+
+			commandBuffer->EndRendering();
+		};
+
+		ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
+
+		for (uint32_t i = 0; i < view_count; i++) {
+			// get the swapchain image for both color and depth
+
+			XrSwapchainImageAcquireInfo color_acquire_info{
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO,
+				.next = nullptr,
+			};
+			uint32_t color_acquired_index;
+			XR_CHECK(xrAcquireSwapchainImage(xr.swapchains[i], &color_acquire_info, &color_acquired_index));
+			XrSwapchainImageWaitInfo waitInfo{
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
+				.next = nullptr,
+				.timeout = 1000,
+			};
+			XR_CHECK(xrWaitSwapchainImage(xr.swapchains[i], &waitInfo));
+
+
+			XrSwapchainImageAcquireInfo depth_aquire_info{
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO,
+				.next = nullptr,
+			};
+			uint32_t depth_acquired_index;
+			XR_CHECK(xrAcquireSwapchainImage(xr.depth_swapchains[i], &depth_aquire_info, &depth_acquired_index));
+			waitInfo = {
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO,
+				.next = nullptr,
+				.timeout = 1000,
+			};
+			XR_CHECK(xrWaitSwapchainImage(xr.depth_swapchains[i], &waitInfo));
+
+			xr.projectionViews[i].pose = views[i].pose;
+			xr.projectionViews[i].fov = views[i].fov;
+
+			if (RGL::CurrentAPI() == RGL::API::Direct3D12) {
+				auto colorResource = ComPtr<ID3D12Resource>(xr.swapchainImages[i][color_acquired_index].d3d12Image.texture);
+				RGL::TextureD3D12 colorAttachment{ colorResource,{xr.viewConfigurationViews[i].recommendedImageRectWidth,xr.viewConfigurationViews[i].recommendedImageRectHeight}, nullptr, 0, nullptr };
+
+				auto depthResource = ComPtr<ID3D12Resource>(xr.depthSwapchainImages[i][depth_acquired_index].d3d12Image.texture);
+				RGL::TextureD3D12 depthAttachment{ depthResource,{xr.viewConfigurationViews[i].recommendedImageRectWidth,xr.viewConfigurationViews[i].recommendedImageRectHeight}, nullptr, 0, nullptr };
+
+				render(&colorAttachment, &depthAttachment);
+			}
+			else {
+
+			}
+
+			XrSwapchainImageReleaseInfo release_info{
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
+				.next = nullptr,
+			};
+			XR_CHECK(xrReleaseSwapchainImage(xr.swapchains[i], &release_info));
+			XrSwapchainImageReleaseInfo depth_release_info{
+				.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
+				.next = nullptr,
+			};
+			XR_CHECK(xrReleaseSwapchainImage(xr.depth_swapchains[i], &depth_release_info));
+
+		}
+			
 		RGL::SwapchainPresentConfig presentConfig{
 		};
 
 		swapchain->GetNextImage(&presentConfig.imageIndex);
 		swapchainFence->Wait();
 		swapchainFence->Reset();
-		commandBuffer->Reset();
-		commandBuffer->Begin();
+		
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
-		auto nextImgSize = nextimg->GetSize();
 
-		renderPass->SetAttachmentTexture(0, nextimg);
-
-		commandBuffer->BeginRendering(renderPass);
-
-		commandBuffer->SetViewport({
-				.width = static_cast<float>(nextImgSize.width),
-				.height = static_cast<float>(nextImgSize.height),
-			});
-		commandBuffer->SetScissor({
-				.extent = {nextImgSize.width, nextImgSize.height}
-			});
-
-		commandBuffer->BindPipeline(renderPipeline);
-		commandBuffer->SetVertexBytes(ubo, 0);
-		commandBuffer->SetVertexBuffer(vertexBuffer);
-		commandBuffer->SetIndexBuffer(indexBuffer);
-		commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
-
-		commandBuffer->EndRendering();
+		// render the main screen
+		render(nextimg, depthTexture.get());
+	
 		commandBuffer->End();
 
 		RGL::CommitConfig commitconfig{
@@ -546,14 +686,41 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->Commit(commitconfig);
 
 		swapchain->Present(presentConfig);
+
+		XrCompositionLayerProjection projectionLayer{
+			.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION,
+			.next = nullptr,
+			.layerFlags = 0,
+			.space = xr.space,
+			.viewCount = view_count,
+			.views = xr.projectionViews.data()
+		};
+		const XrCompositionLayerBaseHeader* submittedLayers[] = {
+			(const XrCompositionLayerBaseHeader* const)&projectionLayer
+		};
+
+		XrFrameEndInfo frameEndInfo{
+			.type = XR_TYPE_FRAME_END_INFO,
+			.next = nullptr,
+			.displayTime = frameState.predictedDisplayTime,
+			.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE,
+			.layerCount = std::size(submittedLayers),
+			.layers = submittedLayers,
+		};
+		XR_CHECK(xrEndFrame(xr.session, &frameEndInfo));
 	}
 
 	void onresize(int width, int height) final {
 		createDepthTexture();
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());	// we recreated it so we need to reset it
 	}
 
 	void sampleshutdown() final {
+		XR_CHECK(xrEndSession(xr.session));
+		XR_CHECK(xrDestroySession(xr.session));
+
+		if (xr.ext_xrDestroyDebugUtilsMessengerEXT != XR_NULL_HANDLE) xr.ext_xrDestroyDebugUtilsMessengerEXT(xr.debugMessenger);
+
+		XR_CHECK(xrDestroyInstance(xr.instance));
 
 		renderPass.reset();
 		depthTexture.reset();
