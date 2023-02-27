@@ -51,7 +51,9 @@ struct Cubes : public ExampleFramework {
 
 		// one list of images per eye
 		std::vector<std::vector<XrSwapchainImage>> swapchainImages;
+		std::vector<std::vector<std::unique_ptr<RGL::ITexture>>> rglSwapchainImages;
 		std::vector<std::vector<XrSwapchainImage>> depthSwapchainImages;
+		std::vector<std::vector<std::unique_ptr<RGL::ITexture>>> rglDepthSwapchainImages;
 		// one swapchain per eye, plus depth
 		int64_t swapchain_format, depth_swapchain_format = -1;
 		std::vector<XrSwapchain> swapchains;
@@ -239,9 +241,14 @@ struct Cubes : public ExampleFramework {
 			PFN_xrGetVulkanGraphicsRequirementsKHR pfn_xrGetVulkanGraphicsRequirementsKHR = nullptr;
 			XR_CHECK(xrGetInstanceProcAddr(xr.instance, "PFN_xrGetVulkanGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfn_xrGetVulkanGraphicsRequirementsKHR));
 			XR_CHECK(pfn_xrGetVulkanGraphicsRequirementsKHR(xr.instance, xr.systemId, &vk_reqs));
-			xr.graphicsBinding.vkBinding = XrGraphicsBindingVulkan2KHR{
+			xr.graphicsBinding.vkBinding = XrGraphicsBindingVulkanKHR{
 				.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR,
-				.device = *(VkDevice*)(devicedata.vkData.device)
+				.next = nullptr,
+				.instance = *(VkInstance*)(devicedata.vkData.instance),
+				.physicalDevice = *(VkPhysicalDevice*)(devicedata.vkData.physicalDevice),
+				.device = *(VkDevice*)(devicedata.vkData.device),
+				.queueFamilyIndex = devicedata.vkData.queueFamilyIndex,
+				.queueIndex = devicedata.vkData.queueIndex
 			};
 		}
 		
@@ -297,6 +304,8 @@ struct Cubes : public ExampleFramework {
 
 		xr.swapchains.resize(view_count);
 		xr.swapchainImages.resize(view_count);
+		xr.rglSwapchainImages.resize(view_count);
+		xr.rglDepthSwapchainImages.resize(view_count);
 		for (uint32_t i = 0; i < view_count; i++) {
 			XrSwapchainCreateInfo swapchain_create_info{
 				.type = XR_TYPE_SWAPCHAIN_CREATE_INFO,
@@ -317,7 +326,22 @@ struct Cubes : public ExampleFramework {
 			XR_CHECK(xrEnumerateSwapchainImages(xr.swapchains[i], 0, &swapchain_length, nullptr));
 
 			xr.swapchainImages[i].resize(swapchain_length, { currentAPI == RGL::API::Direct3D12 ? XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR : XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR , nullptr });
+			xr.rglSwapchainImages[i].resize(swapchain_length);
 			XR_CHECK(xrEnumerateSwapchainImages(xr.swapchains[i], swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)xr.swapchainImages[i].data()));
+
+			// convert to RGL texture objects
+			for (uint32_t j = 0; j < swapchain_length; j++) {
+				auto& img = xr.swapchainImages[i][j];
+				xr.rglSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
+						.usage = RGL::TextureUsage::ColorAttachment,
+						.aspect = RGL::TextureAspect::HasColor,
+						.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
+						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
+						.format = RGL::TextureFormat::BGRA8_Unorm,
+					},
+					device
+				);
+			}
 		}
 
 		if (xr.depth_swapchain_format == -1) {
@@ -347,7 +371,21 @@ struct Cubes : public ExampleFramework {
 			XR_CHECK(xrEnumerateSwapchainImages(xr.depth_swapchains[i], 0, &depth_swapchain_length, nullptr));
 
 			xr.depthSwapchainImages[i].resize(depth_swapchain_length, { currentAPI == RGL::API::Direct3D12 ? XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR : XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR , nullptr });
+			xr.rglDepthSwapchainImages[i].resize(depth_swapchain_length);
 			XR_CHECK(xrEnumerateSwapchainImages(xr.depth_swapchains[i], depth_swapchain_length, &depth_swapchain_length, (XrSwapchainImageBaseHeader*)xr.depthSwapchainImages[i].data()));
+
+			for (uint32_t j = 0; j < depth_swapchain_length; j++) {
+				auto& img = xr.depthSwapchainImages[i][j];
+				xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
+						.usage = RGL::TextureUsage::DepthStencilAttachment,
+						.aspect = RGL::TextureAspect::HasDepth,
+						.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
+						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
+						.format = RGL::TextureFormat::D32SFloat
+					},
+					device
+					);
+			}
 		}
 
 		// a stereo configuration means two views, but we can handle any number
@@ -640,18 +678,7 @@ struct Cubes : public ExampleFramework {
 			xr.projectionViews[i].pose = views[i].pose;
 			xr.projectionViews[i].fov = views[i].fov;
 
-			if (RGL::CurrentAPI() == RGL::API::Direct3D12) {
-				auto colorResource = ComPtr<ID3D12Resource>(xr.swapchainImages[i][color_acquired_index].d3d12Image.texture);
-				RGL::TextureD3D12 colorAttachment{ colorResource,{xr.viewConfigurationViews[i].recommendedImageRectWidth,xr.viewConfigurationViews[i].recommendedImageRectHeight}, nullptr, 0, nullptr };
-
-				auto depthResource = ComPtr<ID3D12Resource>(xr.depthSwapchainImages[i][depth_acquired_index].d3d12Image.texture);
-				RGL::TextureD3D12 depthAttachment{ depthResource,{xr.viewConfigurationViews[i].recommendedImageRectWidth,xr.viewConfigurationViews[i].recommendedImageRectHeight}, nullptr, 0, nullptr };
-
-				render(&colorAttachment, &depthAttachment);
-			}
-			else {
-
-			}
+			render(xr.rglSwapchainImages[i][color_acquired_index].get(), xr.rglDepthSwapchainImages[i][depth_acquired_index].get());
 
 			XrSwapchainImageReleaseInfo release_info{
 				.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
