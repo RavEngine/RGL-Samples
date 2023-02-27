@@ -22,6 +22,7 @@
 #include <openxr/openxr_platform.h>
 
 struct Cubes : public ExampleFramework {
+	float nearZ = 0.1, farZ = 100;
 	struct {
 		// required for all XR apps
 		XrInstance instance;
@@ -37,9 +38,16 @@ struct Cubes : public ExampleFramework {
 		std::vector <XrCompositionLayerProjectionView> projectionViews;
 		std::vector<XrView> views;
 
+		union XrSwapchainImage {
+			XrSwapchainImageD3D12KHR d3d12Image;
+			XrSwapchainImageVulkanKHR vkImage;
+		};
+
 		// one list of images per eye
-		//std::vector<std::vector< XrSwapchainImageD3D12KHR>> swapchainImages;
+		std::vector<std::vector<XrSwapchainImage>> swapchainImages;
+		std::vector<std::vector<XrSwapchainImage>> depthSwapchainImages;
 		// one swapchain per eye, plus depth
+		int64_t swapchain_format, depth_swapchain_format = -1;
 		std::vector<XrSwapchain> swapchains;
 		std::vector<XrSwapchain> depth_swapchains;
 
@@ -50,8 +58,31 @@ struct Cubes : public ExampleFramework {
 			bool supported;
 		} depth;
 
+		struct
+		{
+			std::vector<XrSwapchainImage> images;
+			int64_t format;
+			uint32_t swapchain_width, swapchain_height;
+			uint32_t swapchain_length;
+			XrSwapchain swapchain;
+			bool supported;
+		} cylinder;
+
+		union {
+			XrGraphicsBindingD3D12KHR d3d12Binding;
+			XrGraphicsBindingVulkan2KHR vkBinding;
+		} graphicsBinding;
+
+		XrSessionState state = XR_SESSION_STATE_UNKNOWN;
+
 		XrDebugUtilsMessengerEXT debugMessenger;
 		XrViewConfigurationType viewConfigurationType;
+
+		static constexpr XrPosef identity_pose{ 
+			.orientation = {.x = 0, .y = 0, .z = 0, .w = 1.0},
+			.position = {.x = 0, .y = 0, .z = 0}
+		};
+
 	} xr;
 
 	void Fatal(auto str) {
@@ -149,6 +180,9 @@ struct Cubes : public ExampleFramework {
 			PFN_xrGetD3D12GraphicsRequirementsKHR pfn_xrGetD3D12GraphicsRequirementsKHR = nullptr;
 			XR_CHECK(xrGetInstanceProcAddr(xr.instance, "xrGetD3D12GraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfn_xrGetD3D12GraphicsRequirementsKHR));
 			XR_CHECK(pfn_xrGetD3D12GraphicsRequirementsKHR(xr.instance, xr.systemId, &d3d12_reqs));
+			xr.graphicsBinding.d3d12Binding = XrGraphicsBindingD3D12KHR{
+				.type = XR_TYPE_GRAPHICS_BINDING_D3D12_KHR
+			};
 		}
 		else if (currentAPI == RGL::API::Vulkan) {
 			XrGraphicsRequirementsVulkanKHR vk_reqs{
@@ -158,9 +192,31 @@ struct Cubes : public ExampleFramework {
 			PFN_xrGetVulkanGraphicsRequirementsKHR pfn_xrGetVulkanGraphicsRequirementsKHR = nullptr;
 			XR_CHECK(xrGetInstanceProcAddr(xr.instance, "PFN_xrGetVulkanGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfn_xrGetVulkanGraphicsRequirementsKHR));
 			XR_CHECK(pfn_xrGetVulkanGraphicsRequirementsKHR(xr.instance, xr.systemId, &vk_reqs));
+			xr.graphicsBinding.vkBinding = XrGraphicsBindingVulkan2KHR{
+				.type = XR_TYPE_GRAPHICS_BINDING_VULKAN2_KHR
+			};
 		}
 		
 		// next create the session
+		XrGraphicsBindingD3D12KHR graphicsBinding{};
+		XrSessionCreateInfo sessionCreateInfo{
+			.type = XR_TYPE_SESSION_CREATE_INFO,
+			.next = &xr.graphicsBinding,
+			.systemId = xr.systemId
+		};
+		XR_CHECK(xrCreateSession(xr.instance, &sessionCreateInfo, &xr.session));
+
+		// create the reference space
+		XrReferenceSpaceType play_space_type = XR_REFERENCE_SPACE_TYPE_LOCAL;
+		XrReferenceSpaceCreateInfo playspaceCreateInfo{
+			.type = XR_TYPE_REFERENCE_SPACE_CREATE_INFO,
+			.next = nullptr,
+			.referenceSpaceType = play_space_type,
+			.poseInReferenceSpace = xr.identity_pose
+		};
+		XR_CHECK(xrCreateReferenceSpace(xr.session, &playspaceCreateInfo, &xr.space));
+
+		// begin the session
 		XrSessionBeginInfo sesionBeginInfo{
 			.type = XR_TYPE_SESSION_BEGIN_INFO,
 			.next = nullptr,
@@ -176,7 +232,126 @@ struct Cubes : public ExampleFramework {
 		XR_CHECK(xrEnumerateSwapchainFormats(xr.session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data()));
 
 			// we will use SRGB for now
+		const int preferred_format = currentAPI == RGL::API::Direct3D12 ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
+		const int preferred_depth_format = currentAPI == RGL::API::Direct3D12 ? DXGI_FORMAT_D32_FLOAT : VK_FORMAT_D32_SFLOAT;
 
+		xr.swapchain_format = swapchain_formats[0];
+		xr.cylinder.format = swapchain_formats[0];
+		xr.depth_swapchain_format = swapchain_formats[0];
+		for (auto format : swapchain_formats) {
+			if (format == preferred_format) {
+				xr.swapchain_format = format;
+			}
+			if (format == preferred_depth_format) {
+				xr.depth_swapchain_format = format;
+			}
+		}
+
+		xr.swapchains.resize(view_count);
+		xr.swapchainImages.resize(view_count);
+		for (uint32_t i = 0; i < view_count; i++) {
+			XrSwapchainCreateInfo swapchain_create_info{
+				.type = XR_TYPE_SWAPCHAIN_CREATE_INFO,
+				.next = nullptr,
+				.createFlags = 0,
+				.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT,
+				.format = xr.swapchain_format,
+				.sampleCount = xr.viewConfigurationViews[i].recommendedSwapchainSampleCount,
+				.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
+				.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
+				.faceCount = 1,
+				.arraySize = 1,
+				.mipCount = 1,
+			};
+			XR_CHECK(xrCreateSwapchain(xr.session, &swapchain_create_info, &xr.swapchains[i]));
+
+			uint32_t swapchain_length;
+			XR_CHECK(xrEnumerateSwapchainImages(xr.swapchains[i], 0, &swapchain_length, nullptr));
+
+			xr.swapchainImages[i].resize(swapchain_length, { currentAPI == RGL::API::Direct3D12 ? XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR : XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR , nullptr });
+			XR_CHECK(xrEnumerateSwapchainImages(xr.swapchains[i], swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader*)xr.swapchainImages[i].data()));
+		}
+
+		if (xr.depth_swapchain_format == -1) {
+			Fatal("No supported depth swapchain format");
+		}
+
+		// the process is much the same for the depth swapchain
+		xr.depth_swapchains.resize(view_count);
+		xr.depthSwapchainImages.resize(view_count);
+		for (uint32_t i = 0; i < view_count; i++) {
+			XrSwapchainCreateInfo swapchain_create_info{
+				.type = XR_TYPE_SWAPCHAIN_CREATE_INFO,
+				.next = nullptr,
+				.createFlags = 0,
+				.usageFlags = XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+				.format = xr.depth_swapchain_format,
+				.sampleCount = xr.viewConfigurationViews[i].recommendedSwapchainSampleCount,
+				.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
+				.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
+				.faceCount = 1,
+				.arraySize = 1,
+				.mipCount = 1,
+			};
+			XR_CHECK(xrCreateSwapchain(xr.session, &swapchain_create_info, &xr.depth_swapchains[i]));
+
+			uint32_t depth_swapchain_length;
+			XR_CHECK(xrEnumerateSwapchainImages(xr.depth_swapchains[i], 0, &depth_swapchain_length, nullptr));
+
+			xr.depthSwapchainImages[i].resize(depth_swapchain_length, { currentAPI == RGL::API::Direct3D12 ? XR_TYPE_SWAPCHAIN_IMAGE_D3D12_KHR : XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR , nullptr });
+			XR_CHECK(xrEnumerateSwapchainImages(xr.depth_swapchains[i], depth_swapchain_length, &depth_swapchain_length, (XrSwapchainImageBaseHeader*)xr.depthSwapchainImages[i].data()));
+		}
+
+		// a stereo configuration means two views, but we can handle any number
+		xr.views.resize(view_count, {XR_TYPE_VIEW, nullptr});
+		xr.projectionViews.resize(view_count);
+		for (uint32_t i = 0; i < view_count; i++) {
+			xr.projectionViews[i] = {
+				.type = XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW,
+				.next = nullptr,
+				.subImage = {
+					.swapchain = xr.swapchains[i],
+					.imageRect = {
+						.offset = {
+							.x = 0,
+							.y = 0
+						},
+						.extent = {
+							.width = static_cast<int>(xr.viewConfigurationViews[i].recommendedImageRectWidth),
+							.height = static_cast<int>(xr.viewConfigurationViews[i].recommendedImageRectHeight)
+						}
+					},
+					.imageArrayIndex = 0,
+					// we will fill pose and fov each frame
+				}
+			};
+		}
+		xr.depth.infos.resize(view_count);
+		for (uint32_t i = 0; i < view_count; i++) {
+			xr.depth.infos[i] = {
+				.type = XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR,
+				.next = nullptr,
+				.subImage = {
+					.swapchain = xr.depth_swapchains[i],
+					.imageRect = {
+						.offset = {
+							.x = 0,
+							.y = 0
+						},
+						.extent = {
+							.width = static_cast<int>(xr.viewConfigurationViews[i].recommendedImageRectWidth),
+							.height = static_cast<int>(xr.viewConfigurationViews[i].recommendedImageRectHeight)
+						}
+					},
+					.imageArrayIndex = 0
+				},
+				.minDepth = 0,
+				.maxDepth = 1,
+				.nearZ = this->nearZ,
+				.farZ = this->farZ,
+			};
+			xr.projectionViews[i].next = &xr.depth.infos[i];
+		}
 
 	}
 
