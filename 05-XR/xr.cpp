@@ -6,6 +6,7 @@
 #include <RGL/Sampler.hpp>
 #include <RGL/RenderPass.hpp>
 #include <RGL/../../src/D3D12Texture.hpp>
+#include <RGL/../../src/VkTexture.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
@@ -376,15 +377,41 @@ struct Cubes : public ExampleFramework {
 
 			for (uint32_t j = 0; j < depth_swapchain_length; j++) {
 				auto& img = xr.depthSwapchainImages[i][j];
-				xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
+				if (currentAPI == RGL::API::Direct3D12) {
+					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
 						.usage = RGL::TextureUsage::DepthStencilAttachment,
 						.aspect = RGL::TextureAspect::HasDepth,
 						.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
 						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
 						.format = RGL::TextureFormat::D32SFloat
-					},
-					device
+						},
+						device
 					);
+				}
+				else {
+					VkImageViewCreateInfo createInfo{
+					   .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+					   .image = img.vkImage.image,
+					   .viewType = VK_IMAGE_VIEW_TYPE_2D,
+					   .format = VK_FORMAT_B8G8R8A8_UNORM,
+					   .components{
+						   .r = VK_COMPONENT_SWIZZLE_IDENTITY, // we don't want any swizzling
+						   .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+						   .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+						   .a = VK_COMPONENT_SWIZZLE_IDENTITY
+				   },
+					   .subresourceRange{
+						   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,    // mipmap and layer info (we don't want any here)
+						   .baseMipLevel = 0,
+						   .levelCount = 1,
+						   .baseArrayLayer = 0,
+						   .layerCount = 1
+					   }
+					};
+					VkImageView imageView;
+					vkCreateImageView(*(VkDevice*)(devicedata.vkData.device), &createInfo, nullptr, &imageView);
+					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureVk>(imageView, img.vkImage.image, RGL::Dimension{ xr.viewConfigurationViews[i].recommendedImageRectWidth, xr.viewConfigurationViews[i].recommendedImageRectHeight});
+				}
 			}
 		}
 
