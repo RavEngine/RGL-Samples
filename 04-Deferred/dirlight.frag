@@ -1,11 +1,17 @@
 #version 450
 
-uniform sampler2D finalSampler;
+uniform sampler2D colorSampler;
+uniform sampler2D normalSampler;
+uniform sampler2D positionSampler;
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    vec3 sampled = vec3(1,1,1);
+    vec2 uv = vec2(0.5,0.5);
     
-    outColor = vec4(sampled, 1.0);
+    vec3 color = texture(colorSampler,uv).xyz;
+    vec3 normal = texture(normalSampler,uv).xyz;
+    vec3 pos = texture(positionSampler,uv).xyz;
+    
+    outColor = vec4(color + normal + pos, 1.0);
 }

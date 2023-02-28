@@ -52,7 +52,7 @@ struct Deferred : public ExampleFramework {
             }
         );
         colorTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment,
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
@@ -60,7 +60,7 @@ struct Deferred : public ExampleFramework {
             }
         );
         normalTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment,
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
@@ -68,7 +68,7 @@ struct Deferred : public ExampleFramework {
             }
         );
         positionTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment,
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
@@ -76,7 +76,7 @@ struct Deferred : public ExampleFramework {
             }
         );
         lightingTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment,
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
@@ -417,6 +417,9 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetScissor({
             .extent = {nextImgSize.width, nextImgSize.height}
         });
+        commandBuffer->SetCombinedTextureSampler(textureSampler, colorTexture.get(), 0);
+        commandBuffer->SetCombinedTextureSampler(textureSampler, normalTexture.get(), 1);
+        commandBuffer->SetCombinedTextureSampler(textureSampler, positionTexture.get(), 2);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
         commandBuffer->EndRendering();
@@ -435,6 +438,7 @@ struct Deferred : public ExampleFramework {
             });
 
         commandBuffer->BindPipeline(finalRenderPipeline);
+        commandBuffer->SetCombinedTextureSampler(textureSampler, lightingTexture.get(), 0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
 

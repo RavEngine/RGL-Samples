@@ -5,7 +5,8 @@ uniform sampler2D finalSampler;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    vec3 sampled = vec3(1,1,1);
+    vec2 uv = vec2(0.5,0.5);
+    vec3 sampled = texture(finalSampler, uv).xyz;
     
     outColor = vec4(sampled, 1.0);
 }
