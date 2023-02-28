@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <chrono>
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
 #define _UWP 1   
@@ -12,6 +13,12 @@ struct SDL_Window;
 class AppBase {
 protected:
 	SDL_Window* window = nullptr;
+	float currentScale = 0;
+	typedef std::chrono::duration<double, std::micro> timeDiff;
+	typedef std::chrono::high_resolution_clock clocktype;
+	clocktype::time_point lastframeTime = clocktype::now();
+	constexpr static float evalNormal = 60;
+	const timeDiff maxTimeStep = std::chrono::milliseconds((long)1000);
 public:
 	int run(int argc, char** argv);
 	virtual const char* SampleName() = 0;
@@ -22,6 +29,10 @@ public:
 	virtual void sizechanged(int width, int height) {}
 	virtual void onevent(union SDL_Event&) {}
     float wmScaleFactor = 1;
+	
+	auto getCurrentScale() const {
+		return currentScale;
+	}
 };
 
 #if _UWP
