@@ -1,4 +1,7 @@
 #include "App.hpp"
+#if __APPLE__
+#include "AppleFns.hpp"
+#endif
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <SDL_main.h>
@@ -76,6 +79,9 @@ int AppBase::run(int argc, char** argv) {
 	SDL_Event event;
 	bool exit = false;
 	while (!exit) {
+#if __APPLE__
+        AppleAutoreleasePoolInit();
+#endif
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_QUIT:
@@ -100,6 +106,9 @@ int AppBase::run(int argc, char** argv) {
         internaltick();
 		tick();
 		lastframeTime = now;
+#if __APPLE__
+        AppleAutoreleasePoolDrain();
+#endif
 	}
 
 	shutdown();

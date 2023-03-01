@@ -62,12 +62,17 @@ set(RGL_DISABLE_DX OFF CACHE INTERNAL "")
 set(RGL_DISABLE_VK OFF CACHE INTERNAL "")
 add_subdirectory(deps/RGL EXCLUDE_FROM_ALL)
 
-
-
 # App framework using SDL2
-add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp" "Common/ExampleFramework.hpp" "Common/ExampleFramework.cpp")
+add_library(${PROJECT_NAME}-Common "Common/App.cpp" "Common/App.hpp" "Common/ExampleFramework.hpp" "Common/ExampleFramework.cpp" "Common/AppleFns.hpp" "Common/AppleFns.mm")
 target_compile_features(${PROJECT_NAME}-Common PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME}-Common PUBLIC "./" PRIVATE "deps/SDL2/include")
+
+if (APPLE)
+set_source_files_properties("Common/AppleFns.mm" PROPERTIES
+    COMPILE_FLAGS "-x objective-c++"
+)
+endif()
+
 
 if (CMAKE_SYSTEM_NAME MATCHES WindowsStore)
 	add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
