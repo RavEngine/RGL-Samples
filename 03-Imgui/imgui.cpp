@@ -248,6 +248,7 @@ void main(){
 	void tick() final {
 		
 		ImGui_ImplSDL2_NewFrame();
+		ImGui::CreateContext();
 		ImGui::NewFrame();
 		ImGui::ShowDemoWindow();
 		RGL::SwapchainPresentConfig presentConfig{};
