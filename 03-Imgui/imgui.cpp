@@ -246,35 +246,37 @@ void main(){
 	}
 
 	void tick() final {
-		
+		// imgui calls
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::CreateContext();
 		ImGui::NewFrame();
 		ImGui::ShowDemoWindow();
-		RGL::SwapchainPresentConfig presentConfig{};
-
-		swapchain->GetNextImage(&presentConfig.imageIndex);
-		
-		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
-		auto nextImgSize = nextimg->GetSize();
-
-        renderPass->SetAttachmentTexture(0, nextimg);
 
 		ImGui::Render();
 		auto drawData = ImGui::GetDrawData();
 		size_t vertexBufferLength = (size_t)drawData->TotalVtxCount * sizeof(ImDrawVert);
 		size_t indexBufferLength = (size_t)drawData->TotalIdxCount * sizeof(ImDrawIdx);
-		
-		// create the unified vert / ind buffer 
-		refreshBuffers(vertexBufferLength, indexBufferLength);
-        vertexBuffer->MapMemory();
-        indexBuffer->MapMemory();
 
-		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 		int fb_width = (int)(drawData->DisplaySize.x * drawData->FramebufferScale.x);
 		int fb_height = (int)(drawData->DisplaySize.y * drawData->FramebufferScale.y);
 		if (fb_width <= 0 || fb_height <= 0 || drawData->CmdListsCount == 0)
 			return;
+		
+		// now that Imgui has been determined, start the render process
+		RGL::SwapchainPresentConfig presentConfig{};
+		swapchain->GetNextImage(&presentConfig.imageIndex);
+		swapchainFence->Wait();
+		swapchainFence->Reset();
+
+		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
+		auto nextImgSize = nextimg->GetSize();
+
+		renderPass->SetAttachmentTexture(0, nextimg);
+
+		// create the unified vert / ind buffer 
+		refreshBuffers(vertexBufferLength, indexBufferLength);
+        vertexBuffer->MapMemory();
+        indexBuffer->MapMemory();
 
 		// Will project scissor/clipping rectangles into framebuffer space
 		ImVec2 clip_off = drawData->DisplayPos;         // (0,0) unless using multi-viewports
