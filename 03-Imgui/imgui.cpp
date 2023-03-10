@@ -309,8 +309,8 @@ void main(){
 		{
 			const ImDrawList* cmd_list = drawData->CmdLists[n];
             
-            vertexBuffer->UpdateBufferData({ cmd_list->VtxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert)}, vertexBufferOffset);
-            indexBuffer->UpdateBufferData({ cmd_list->IdxBuffer.Data, (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx)}, indexBufferOffset);
+            vertexBuffer->UpdateBufferData({ cmd_list->VtxBuffer.Data, (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert)}, vertexBufferOffset * sizeof(ImDrawVert));
+            indexBuffer->UpdateBufferData({ cmd_list->IdxBuffer.Data, (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx)}, indexBufferOffset * sizeof(ImDrawIdx));
             
 			for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 			{
@@ -362,15 +362,15 @@ void main(){
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);
-                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset + pcmd->VtxOffset * sizeof(ImDrawVert));
+                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset + pcmd->VtxOffset);
 					commandBuffer->SetIndexBuffer(indexBuffer);
 					commandBuffer->DrawIndexed(pcmd->ElemCount, {
-						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset * sizeof(ImDrawIdx))
+						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset)
 					});
 				}
 			}
-			vertexBufferOffset += (size_t)cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
-			indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
+            vertexBufferOffset += (size_t)cmd_list->VtxBuffer.Size;
+            indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size;
 		}
         commandBuffer->EndRendering();
 		commandBuffer->End();
