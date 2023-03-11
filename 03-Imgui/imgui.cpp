@@ -160,7 +160,7 @@ void main(){
                 .extent = {width, height}
             },
             .rasterizerConfig = {
-                .windingOrder = RGL::WindingOrder::Counterclockwise,
+                .windingOrder = RGL::WindingOrder::Clockwise,
             },
             .colorBlendConfig{
                 .attachments = {
