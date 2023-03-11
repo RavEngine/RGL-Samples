@@ -126,19 +126,6 @@ struct Cubes : public ExampleFramework {
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
-
-		// then give the layout the data for it to represent
-		
-		renderPipelineLayout->SetLayout({
-			.boundTextures = {
-				{
-					.texture = sampledTexture,
-					.sampler = textureSampler,
-				}
-			}
-		});
-
-
 		// create a render pipeline
 		renderPipeline = device->CreateRenderPipeline({
             .stages = {
