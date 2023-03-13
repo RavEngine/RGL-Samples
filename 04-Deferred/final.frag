@@ -1,6 +1,6 @@
 #version 450
 
-uniform sampler2D finalSampler;
+layout(binding = 0) uniform sampler2D finalSampler;
 
 layout(location = 0) out vec4 outColor;
 
