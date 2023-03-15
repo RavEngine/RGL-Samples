@@ -48,7 +48,8 @@ struct Deferred : public ExampleFramework {
             .aspect = RGL::TextureAspect::HasDepth,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
-            .format = RGL::TextureFormat::D32SFloat
+            .format = RGL::TextureFormat::D32SFloat,
+            .debugName = "Depth Texture"
             }
         );
         colorTexture = device->CreateTexture({
@@ -56,7 +57,8 @@ struct Deferred : public ExampleFramework {
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
-            .format = colorTexFormat
+            .format = colorTexFormat,
+            .debugName = "Color gbuffer"
             }
         );
         normalTexture = device->CreateTexture({
@@ -64,7 +66,8 @@ struct Deferred : public ExampleFramework {
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
-            .format = normalTexFormat
+            .format = normalTexFormat,
+            .debugName = "Normal gbuffer"
             }
         );
         positionTexture = device->CreateTexture({
@@ -72,7 +75,8 @@ struct Deferred : public ExampleFramework {
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
-            .format = posTexFormat
+            .format = posTexFormat,
+            .debugName = "Position gbuffer"
             }
         );
         lightingTexture = device->CreateTexture({
@@ -80,7 +84,8 @@ struct Deferred : public ExampleFramework {
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
-            .format = colorTexFormat
+            .format = colorTexFormat,
+            .debugName = "Lighting texture"
             }
         );
     }
@@ -442,6 +447,14 @@ struct Deferred : public ExampleFramework {
                     .format = colorTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
+                    .preTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::Undefined,
+                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                    },
+                    .postTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal,
+                    }
                 }
             },
         });
@@ -571,6 +584,7 @@ struct Deferred : public ExampleFramework {
 
         finalRenderPass.reset();
         finalRenderPipelineLayout.reset();
+        lightRenderPipelineLayout.reset();
         dirLightRenderPipeline.reset();
         dirLightRenderPass.reset();
         finalRenderPipeline.reset();
