@@ -16,7 +16,7 @@ constexpr static uint32_t nCubes = 36;
 static float cubeSpinSpeeds [nCubes]{0};
 
 struct Deferred : public ExampleFramework {
-    RGLPipelineLayoutPtr deferredRenderPipelineLayout, finalRenderPipelineLayout;
+    RGLPipelineLayoutPtr deferredRenderPipelineLayout, lightRenderPipelineLayout, finalRenderPipelineLayout;
     RGLRenderPipelinePtr deferredRenderPipeline, dirLightRenderPipeline, finalRenderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts;
         
@@ -150,6 +150,66 @@ struct Deferred : public ExampleFramework {
             .boundSamplers = {
                 textureSampler
             },
+        });
+
+        lightRenderPipelineLayout = device->CreatePipelineLayout({
+            .bindings = {
+                 {
+                    .binding = 0,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                 {
+                    .binding = 1,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                 {
+                    .binding = 2,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                 {
+                    .binding = 3,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                {
+                    .binding = 4,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },       
+                {
+                    .binding = 5,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },        
+                {
+                    .binding = 6,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+                {
+                    .binding = 7,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .descriptorCount = 1,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                },
+            },
+            .boundSamplers = {
+                textureSampler,
+                textureSampler,
+                textureSampler,
+                textureSampler,
+            },
+
         });
     
         // create render pipelines
@@ -318,7 +378,7 @@ struct Deferred : public ExampleFramework {
                         }
                     }
                 },
-                .pipelineLayout = finalRenderPipelineLayout,
+                .pipelineLayout = lightRenderPipelineLayout,
         });
         
         deferredRenderPass = RGL::CreateRenderPass({
@@ -328,19 +388,43 @@ struct Deferred : public ExampleFramework {
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
                     .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-                    .shouldTransition = false
+
+                    .preTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::Undefined,
+                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                    },		// we sample this image later
+                    .postTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
+                    }
                 },
                 {
                     .format = normalTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .shouldTransition = false
+
+                    .preTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::Undefined,
+                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                    },	
+                    .postTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
+                    }
                 },
                 {
                     .format = posTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .shouldTransition = false
+
+                    .preTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::Undefined,
+                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                    },
+                    .postTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
+                    }
                 }
 
             },
@@ -358,7 +442,6 @@ struct Deferred : public ExampleFramework {
                     .format = colorTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .shouldTransition = false
                 }
             },
         });
@@ -370,7 +453,14 @@ struct Deferred : public ExampleFramework {
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
                     .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-                    .shouldTransition = true        // for swapchain images
+                    .preTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::Undefined,
+                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                    },		// for swapchain images
+                    .postTransition = RGL::TransitionInfo{
+                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+                        .afterLayout = RGL::ResourceLayout::Present
+                    }
                 }
             },
         });

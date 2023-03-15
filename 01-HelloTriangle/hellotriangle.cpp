@@ -204,7 +204,14 @@ struct HelloWorld : public AppBase {
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.shouldTransition = true,				// this image comes from the swapchain, so it needs to be moved between rendertarget and Present states
+					.preTransition = RGL::TransitionInfo{
+						.beforeLayout = RGL::ResourceLayout::Undefined,
+						.afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+					},				// this image comes from the swapchain, so it needs to be moved between rendertarget and Present states
+					.postTransition = RGL::TransitionInfo{
+						.beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+						.afterLayout = RGL::ResourceLayout::Present
+					}
                 }
             }
         });

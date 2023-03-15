@@ -189,7 +189,14 @@ void main(){
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.shouldTransition = true		// for swapchain images
+					.preTransition = RGL::TransitionInfo{
+						.beforeLayout = RGL::ResourceLayout::Undefined,
+						.afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+					},		// for swapchain images
+					.postTransition = RGL::TransitionInfo{
+						.beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
+						.afterLayout = RGL::ResourceLayout::Present
+					}
 				}
 			},
 		});
