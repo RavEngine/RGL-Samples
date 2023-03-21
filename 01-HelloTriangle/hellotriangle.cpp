@@ -203,15 +203,7 @@ struct HelloWorld : public AppBase {
 					.format = RGL::TextureFormat::BGRA8_Unorm,
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
-					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.preTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::Undefined,
-						.afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-					},				// this image comes from the swapchain, so it needs to be moved between rendertarget and Present states
-					.postTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-						.afterLayout = RGL::ResourceLayout::Present
-					}
+					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f}
                 }
             }
         });
@@ -235,6 +227,7 @@ struct HelloWorld : public AppBase {
         
         renderPass->SetAttachmentTexture(0, nextimg);
 
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 		commandBuffer->BeginRendering(renderPass);
 
 		commandBuffer->SetViewport({
@@ -252,6 +245,8 @@ struct HelloWorld : public AppBase {
 		commandBuffer->Draw(std::size(vertices));
 
 		commandBuffer->EndRendering();
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
+
 		commandBuffer->End();
 		
 		RGL::CommitConfig commitconfig{

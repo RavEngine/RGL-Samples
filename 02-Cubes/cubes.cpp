@@ -200,14 +200,6 @@ struct Cubes : public ExampleFramework {
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.preTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::Undefined,
-						.afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-					},		// for swapchain images
-					.postTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-						.afterLayout = RGL::ResourceLayout::Present
-					}
 				}
 			},
 			.depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
@@ -243,6 +235,7 @@ struct Cubes : public ExampleFramework {
 
         renderPass->SetAttachmentTexture(0, nextimg);
 
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(renderPass);
 
 		commandBuffer->SetViewport({
@@ -264,6 +257,7 @@ struct Cubes : public ExampleFramework {
 		});
 
 		commandBuffer->EndRendering();
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 		commandBuffer->End();
 		
 		RGL::CommitConfig commitconfig{

@@ -189,14 +189,6 @@ void main(){
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.preTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::Undefined,
-						.afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-					},		// for swapchain images
-					.postTransition = RGL::TransitionInfo{
-						.beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-						.afterLayout = RGL::ResourceLayout::Present
-					}
 				}
 			},
 		});
@@ -307,6 +299,7 @@ void main(){
         
         commandBuffer->Reset();
         commandBuffer->Begin();
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(renderPass);
         commandBuffer->BindPipeline(renderPipeline);
 
@@ -380,6 +373,7 @@ void main(){
             indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size;
 		}
         commandBuffer->EndRendering();
+		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 		commandBuffer->End();
         vertexBuffer->UnmapMemory();
         indexBuffer->UnmapMemory();
