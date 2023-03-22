@@ -58,6 +58,7 @@ struct Deferred : public ExampleFramework {
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = colorTexFormat,
+            .initialLayout = RGL::ResourceLayout::Undefined,
             .debugName = "Color gbuffer"
             }
         );
@@ -67,6 +68,7 @@ struct Deferred : public ExampleFramework {
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = normalTexFormat,
+            .initialLayout = RGL::ResourceLayout::Undefined,
             .debugName = "Normal gbuffer"
             }
         );
@@ -76,6 +78,7 @@ struct Deferred : public ExampleFramework {
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = posTexFormat,
+            .initialLayout = RGL::ResourceLayout::Undefined,
             .debugName = "Position gbuffer"
             }
         );
@@ -85,9 +88,25 @@ struct Deferred : public ExampleFramework {
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = colorTexFormat,
+            .initialLayout = RGL::ResourceLayout::Undefined,
             .debugName = "Lighting texture"
             }
         );
+
+        // the textures begin in the wrong layout
+        // we need to transition them to the layout the first pass is expecting
+        auto tmpcmd = commandQueue->CreateCommandBuffer();
+        auto tmpfence = device->CreateFence(false);
+        tmpcmd->Begin();
+        for (const auto& ptr : { colorTexture , normalTexture, positionTexture, lightingTexture }) {
+            tmpcmd->TransitionResource(ptr.get(), RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
+        }
+
+        tmpcmd->End();
+        tmpcmd->Commit({
+            .signalFence = tmpfence
+        });
+        tmpfence->Wait();
     }
     void sampleinit(int argc, char** argv) final {
         
@@ -393,43 +412,16 @@ struct Deferred : public ExampleFramework {
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
                     .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-
-                    .preTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::Undefined,
-                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                    },		// we sample this image later
-                    .postTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
-                    }
                 },
                 {
                     .format = normalTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-
-                    .preTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::Undefined,
-                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                    },	
-                    .postTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
-                    }
                 },
                 {
                     .format = posTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-
-                    .preTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::Undefined,
-                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                    },
-                    .postTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal
-                    }
                 }
 
             },
@@ -447,14 +439,6 @@ struct Deferred : public ExampleFramework {
                     .format = colorTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .preTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::Undefined,
-                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                    },
-                    .postTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                        .afterLayout = RGL::ResourceLayout::ShaderReadOnlyOptimal,
-                    }
                 }
             },
         });
@@ -466,14 +450,6 @@ struct Deferred : public ExampleFramework {
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
                     .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-                    .preTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::Undefined,
-                        .afterLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                    },		// for swapchain images
-                    .postTransition = RGL::TransitionInfo{
-                        .beforeLayout = RGL::ResourceLayout::ColorAttachmentOptimal,
-                        .afterLayout = RGL::ResourceLayout::Present
-                    }
                 }
             },
         });
@@ -507,6 +483,10 @@ struct Deferred : public ExampleFramework {
         auto nextImgSize = nextimg->GetSize();
         
         // first do the deferred pass
+        for (const auto& ptr : { colorTexture, normalTexture, positionTexture }) {
+            commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
+        }
+
         commandBuffer->BeginRendering(deferredRenderPass);
         commandBuffer->BindPipeline(deferredRenderPipeline);
         commandBuffer->SetViewport({
@@ -525,6 +505,11 @@ struct Deferred : public ExampleFramework {
         commandBuffer->EndRendering();
         
         // then do the lighting pass
+        for (const auto& ptr : { colorTexture, normalTexture, positionTexture }) {
+            commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
+        }
+        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
+
         commandBuffer->BeginRendering(dirLightRenderPass);
         commandBuffer->BindPipeline(dirLightRenderPipeline);
         commandBuffer->SetViewport({
@@ -539,11 +524,13 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetCombinedTextureSampler(textureSampler, positionTexture.get(), 2);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
+        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
         commandBuffer->EndRendering();
 
         // next do the final render
         finalRenderPass->SetAttachmentTexture(0, nextimg);
 
+        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(finalRenderPass);
 
         commandBuffer->SetViewport({
@@ -559,6 +546,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
 
+        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->EndRendering();
         commandBuffer->End();
         
