@@ -31,11 +31,15 @@ struct Deferred : public ExampleFramework {
         colorTexFormat = RGL::TextureFormat::RGBA16_Unorm;
 
     
-    struct alignas(16) UniformBufferObject {
+    struct alignas(16) {
         glm::mat4 viewProj;
         float timeSinceStart;
         
-    } ubo;
+    } deferredStageUbo;
+
+    struct alignas(16) {
+        glm::ivec2 scdim;
+    } lightingAndFinalStageUbo;
     
     const char* SampleName() {
         return "Deferred";
@@ -153,7 +157,7 @@ struct Deferred : public ExampleFramework {
         // create a pipeline layout
         // this describes what we *can* bind to the shader
         deferredRenderPipelineLayout = device->CreatePipelineLayout({
-            .constants = {{ ubo, 0}}
+            .constants = {{ deferredStageUbo, 0}}
         });
         
         finalRenderPipelineLayout = device->CreatePipelineLayout({
@@ -174,6 +178,9 @@ struct Deferred : public ExampleFramework {
             .boundSamplers = {
                 textureSampler
             },
+            .constants = {
+                {lightingAndFinalStageUbo, 0}
+            }
         });
 
         lightRenderPipelineLayout = device->CreatePipelineLayout({
@@ -233,7 +240,9 @@ struct Deferred : public ExampleFramework {
                 textureSampler,
                 textureSampler,
             },
-
+            .constants = {
+                {lightingAndFinalStageUbo, 0}
+            }
         });
     
         // create render pipelines
@@ -468,8 +477,9 @@ struct Deferred : public ExampleFramework {
         camera.position.z = 10;
     }
     void tick() final {
-        ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
-        ubo.timeSinceStart = getTimeSeconds();
+        deferredStageUbo.viewProj = camera.GenerateViewProjMatrix(width, height);
+        deferredStageUbo.timeSinceStart = getTimeSeconds();
+        lightingAndFinalStageUbo.scdim = { width,height };
         
         RGL::SwapchainPresentConfig presentConfig{
         };
@@ -496,7 +506,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetScissor({
             .extent = {nextImgSize.width, nextImgSize.height}
         });
-        commandBuffer->SetVertexBytes(ubo, 0);
+        commandBuffer->SetVertexBytes(deferredStageUbo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
         commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
@@ -519,6 +529,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetScissor({
             .extent = {nextImgSize.width, nextImgSize.height}
         });
+        commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->SetCombinedTextureSampler(textureSampler, colorTexture.get(), 0);
         commandBuffer->SetCombinedTextureSampler(textureSampler, normalTexture.get(), 1);
         commandBuffer->SetCombinedTextureSampler(textureSampler, positionTexture.get(), 2);
@@ -544,6 +555,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->BindPipeline(finalRenderPipeline);
         commandBuffer->SetCombinedTextureSampler(textureSampler, lightingTexture.get(), 0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
+        commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
 
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
