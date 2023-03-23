@@ -138,7 +138,7 @@ struct HelloWorld : public AppBase {
 
 		// create a pipeline layout
 		RGL::PipelineLayoutDescriptor layoutConfig{
-			.constants = {{ ubo, 0}}
+			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
         

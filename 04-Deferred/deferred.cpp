@@ -157,7 +157,7 @@ struct Deferred : public ExampleFramework {
         // create a pipeline layout
         // this describes what we *can* bind to the shader
         deferredRenderPipelineLayout = device->CreatePipelineLayout({
-            .constants = {{ deferredStageUbo, 0}}
+            .constants = {{ deferredStageUbo, 0, RGL::StageVisibility::Vertex}}
         });
         
         finalRenderPipelineLayout = device->CreatePipelineLayout({
@@ -179,7 +179,7 @@ struct Deferred : public ExampleFramework {
                 textureSampler
             },
             .constants = {
-                {lightingAndFinalStageUbo, 0}
+                {lightingAndFinalStageUbo, 0, RGL::StageVisibility::Fragment}
             }
         });
 
@@ -241,7 +241,7 @@ struct Deferred : public ExampleFramework {
                 textureSampler,
             },
             .constants = {
-                {lightingAndFinalStageUbo, 0}
+                {lightingAndFinalStageUbo, 0, RGL::StageVisibility::Fragment}
             }
         });
     
@@ -535,8 +535,8 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetCombinedTextureSampler(textureSampler, positionTexture.get(), 2);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
-        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
         commandBuffer->EndRendering();
+        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
 
         // next do the final render
         finalRenderPass->SetAttachmentTexture(0, nextimg);
@@ -557,9 +557,8 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
-
-        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->EndRendering();
+        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->End();
         
         RGL::CommitConfig commitconfig{

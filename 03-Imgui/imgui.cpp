@@ -106,7 +106,7 @@ void main(){
 			.boundSamplers = {
 				textureSampler
 			},
-			.constants = {{ ubo, 0}}
+			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
