@@ -12,6 +12,11 @@ layout(location = 2) in vec2 inUV;
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outWorldpos;
+layout(location = 3) out vec3 outCubeColor;
+
+float rand(vec2 co){
+  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
 
 void main() {
     const uint gridSize = 6;
@@ -33,9 +38,6 @@ void main() {
         vec4(pos, 1.0)
     );
 
-    mat3 normalmat  = transpose(mat3(model));
-
-
     float animTime = ubo.timeSinceStart * spinSpeed;
 
     mat4 rotmatx = mat4(
@@ -51,11 +53,21 @@ void main() {
         vec4(0, 0, 0, 0),
         vec4(0, 0, 0, 0)
     );
+
+    mat4 finalmat = model * rotmatx;
+
+    mat3 normalmat = transpose(mat3(finalmat));
+
     
-    vec4 worldpos = (model *  rotmatx) * vec4(inPosition,1);
+    vec4 worldpos = finalmat * vec4(inPosition,1);
     
     gl_Position = ubo.viewProj * worldpos;
     outUV = inUV;
     outNormal = normalize(normalmat * inNormal);
     outWorldpos = worldpos.xyz;
+    outCubeColor = vec3(
+        rand(vec2(gl_InstanceID,gl_InstanceID)),
+        rand(vec2(gl_InstanceID+1,gl_InstanceID+1)),
+        rand(vec2(gl_InstanceID+2,gl_InstanceID+2))
+    );
 }

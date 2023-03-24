@@ -23,6 +23,8 @@ void main() {
     vec3 diffuse = color * ndotl;
     float intensity = 1;
     vec3 lightColor = vec3(1,1,1);
+
+    vec3 ambientlight = vec3(0.1,0.1,0.1);
     
-    outColor = vec4(intensity * lightColor * diffuse, 1.0);
+    outColor = vec4((intensity * lightColor * diffuse) + ambientlight, 1.0);
 }

@@ -26,9 +26,9 @@ struct Deferred : public ExampleFramework {
     RGLRenderPassPtr deferredRenderPass, dirLightRenderPass, finalRenderPass;
     
     constexpr static RGL::TextureFormat
-        posTexFormat = RGL::TextureFormat::RGBA32_Float,
-        normalTexFormat = RGL::TextureFormat::RGBA16_Unorm,
-        colorTexFormat = RGL::TextureFormat::RGBA16_Unorm;
+        posTexFormat = RGL::TextureFormat::RGBA32_Sfloat,
+        normalTexFormat = RGL::TextureFormat::RGBA16_Sfloat,
+        colorTexFormat = RGL::TextureFormat::RGBA16_Snorm;
 
     
     struct alignas(16) {
@@ -46,6 +46,7 @@ struct Deferred : public ExampleFramework {
     }
     void updateGBuffers()
     {
+        swapchainFence->Wait();
         // create the depth buffer
         depthTexture = device->CreateTexture({
             .usage = RGL::TextureUsage::DepthStencilAttachment,
