@@ -364,6 +364,12 @@ struct Deferred : public ExampleFramework {
                         }
                     }
                 },
+                .depthStencilConfig = {
+                    .depthFormat = RGL::TextureFormat::D32SFloat,
+                    .depthTestEnabled = true,
+                    .depthWriteEnabled = false,
+                    .depthFunction = RGL::DepthCompareFunction::Greater,
+                },
                 .pipelineLayout = finalRenderPipelineLayout,
         });
         
@@ -412,6 +418,12 @@ struct Deferred : public ExampleFramework {
                         }
                     }
                 },
+                .depthStencilConfig = {
+                    .depthFormat = RGL::TextureFormat::D32SFloat,
+                    .depthTestEnabled = true,
+                    .depthWriteEnabled = false,
+                    .depthFunction = RGL::DepthCompareFunction::Greater,
+                 },
                 .pipelineLayout = lightRenderPipelineLayout,
         });
         
@@ -421,7 +433,6 @@ struct Deferred : public ExampleFramework {
                     .format = colorTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
                 },
                 {
                     .format = normalTexFormat,
@@ -451,6 +462,11 @@ struct Deferred : public ExampleFramework {
                     .storeOp = RGL::StoreAccessOperation::Store,
                 }
             },
+            .depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
+                .format = RGL::TextureFormat::D32SFloat,
+                .loadOp = RGL::LoadAccessOperation::Load,
+                .storeOp = RGL::StoreAccessOperation::Store,
+            }
         });
         
         finalRenderPass = RGL::CreateRenderPass({
@@ -460,8 +476,13 @@ struct Deferred : public ExampleFramework {
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
                     .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-                }
+                },
             },
+             .depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
+                .format = RGL::TextureFormat::D32SFloat,
+                .loadOp = RGL::LoadAccessOperation::Load,
+                .storeOp = RGL::StoreAccessOperation::Store,
+            }
         });
 
         // the depth texture is not swapchained so we can set it once
@@ -471,6 +492,8 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
 
         dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
+        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture.get());
+        finalRenderPass->SetDepthAttachmentTexture(depthTexture.get());
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
