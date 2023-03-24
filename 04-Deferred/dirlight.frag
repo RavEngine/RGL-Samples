@@ -16,6 +16,13 @@ void main() {
     vec3 normal = texture(normalSampler,uv).xyz;
     vec3 color = texture(colorSampler,uv).xyz;
     vec3 pos = texture(positionSampler,uv).xyz;
+
+    vec3 toLight = -vec3(0,-1,0);
+    float ndotl = max(dot(normal,toLight), 0);
+
+    vec3 diffuse = color * ndotl;
+    float intensity = 1;
+    vec3 lightColor = vec3(1,1,1);
     
-    outColor = vec4(color + normal + pos, 1.0);
+    outColor = vec4(intensity * lightColor * diffuse, 1.0);
 }
