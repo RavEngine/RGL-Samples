@@ -13,6 +13,7 @@ layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outWorldpos;
 layout(location = 3) out vec3 outCubeColor;
+layout(location = 4) out uint outID;
 
 float rand(vec2 co){
   return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -70,4 +71,5 @@ void main() {
         rand(vec2(gl_InstanceID+1,gl_InstanceID+1)),
         rand(vec2(gl_InstanceID+2,gl_InstanceID+2))
     );
+    outID = gl_InstanceID;
 }

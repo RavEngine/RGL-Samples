@@ -21,15 +21,15 @@ struct Deferred : public ExampleFramework {
     RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts;
         
     RGLCommandBufferPtr commandBuffer;
-    RGLTexturePtr depthTexture, colorTexture, normalTexture, positionTexture, lightingTexture;
+    RGLTexturePtr depthTexture, colorTexture, normalTexture, positionTexture, lightingTexture, idTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr deferredRenderPass, dirLightRenderPass, finalRenderPass;
     
     constexpr static RGL::TextureFormat
         posTexFormat = RGL::TextureFormat::RGBA32_Sfloat,
         normalTexFormat = RGL::TextureFormat::RGBA16_Sfloat,
-        colorTexFormat = RGL::TextureFormat::RGBA16_Snorm;
-
+        colorTexFormat = RGL::TextureFormat::RGBA16_Snorm,
+        idTexFormat = RGL::TextureFormat::R32_Uint;
     
     struct alignas(16) {
         glm::mat4 viewProj;
@@ -98,12 +98,23 @@ struct Deferred : public ExampleFramework {
             }
         );
 
+        idTexture = device->CreateTexture({
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
+            .aspect = RGL::TextureAspect::HasColor,
+            .width = (uint32_t)width,
+            .height = (uint32_t)height,
+            .format = idTexFormat,
+            .initialLayout = RGL::ResourceLayout::Undefined,
+            .debugName = "ID texture",
+            .readbackEnabled = true
+        });
+
         // the textures begin in the wrong layout
         // we need to transition them to the layout the first pass is expecting
         auto tmpcmd = commandQueue->CreateCommandBuffer();
         auto tmpfence = device->CreateFence(false);
         tmpcmd->Begin();
-        for (const auto& ptr : { colorTexture , normalTexture, positionTexture, lightingTexture }) {
+        for (const auto& ptr : { colorTexture , normalTexture, positionTexture, lightingTexture, idTexture }) {
             tmpcmd->TransitionResource(ptr.get(), RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
         }
 
@@ -307,6 +318,9 @@ struct Deferred : public ExampleFramework {
                         },
                         {
                             .format = posTexFormat
+                        },
+                        {
+                            .format = idTexFormat
                         }
                     }
                 },
@@ -443,6 +457,11 @@ struct Deferred : public ExampleFramework {
                     .format = posTexFormat,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
+                }, 
+                {
+                    .format = idTexFormat,
+                    .loadOp = RGL::LoadAccessOperation::Clear,
+                    .storeOp = RGL::StoreAccessOperation::Store,
                 }
 
             },
@@ -490,6 +509,7 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
         deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
+        deferredRenderPass->SetAttachmentTexture(3, idTexture.get());
 
         dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
         dirLightRenderPass->SetDepthAttachmentTexture(depthTexture.get());
@@ -517,7 +537,7 @@ struct Deferred : public ExampleFramework {
         auto nextImgSize = nextimg->GetSize();
         
         // first do the deferred pass
-        for (const auto& ptr : { colorTexture, normalTexture, positionTexture }) {
+        for (const auto& ptr : { colorTexture, normalTexture, positionTexture, idTexture }) {
             commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         }
 
@@ -539,7 +559,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->EndRendering();
         
         // then do the lighting pass
-        for (const auto& ptr : { colorTexture, normalTexture, positionTexture }) {
+        for (const auto& ptr : { colorTexture, normalTexture, positionTexture, idTexture }) {
             commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
         }
         commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
@@ -599,6 +619,7 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
         deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
+        deferredRenderPass->SetAttachmentTexture(3, idTexture.get());
         
         dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
     }
@@ -616,6 +637,7 @@ struct Deferred : public ExampleFramework {
         depthTexture.reset();
         colorTexture.reset();
         positionTexture.reset();
+        idTexture.reset();
         normalTexture.reset();
         lightingTexture.reset();
         textureSampler.reset();
