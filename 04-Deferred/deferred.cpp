@@ -649,7 +649,7 @@ struct Deferred : public ExampleFramework {
        
         tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::TransferSourceOptimal, RGL::TransitionPosition::Top);
         tmpcmd->CopyTextureToBuffer(idTexture.get(), { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
-        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
+        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::TransferSourceOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
 
         tmpcmd->End();
         tmpcmd->Commit({
