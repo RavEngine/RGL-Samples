@@ -18,12 +18,14 @@ static float cubeSpinSpeeds [nCubes]{0};
 struct Deferred : public ExampleFramework {
     RGLPipelineLayoutPtr deferredRenderPipelineLayout, lightRenderPipelineLayout, finalRenderPipelineLayout;
     RGLRenderPipelinePtr deferredRenderPipeline, dirLightRenderPipeline, finalRenderPipeline;
-    RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts;
+    RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts, imageDownloadBuffer;
         
     RGLCommandBufferPtr commandBuffer;
     RGLTexturePtr depthTexture, colorTexture, normalTexture, positionTexture, lightingTexture, idTexture;
     RGLSamplerPtr textureSampler;
     RGLRenderPassPtr deferredRenderPass, dirLightRenderPass, finalRenderPass;
+
+    int32_t selectedObject = -1;	// default unselected
     
     constexpr static RGL::TextureFormat
         posTexFormat = RGL::TextureFormat::RGBA32_Sfloat,
@@ -99,7 +101,7 @@ struct Deferred : public ExampleFramework {
         );
 
         idTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
+            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferSource,
             .aspect = RGL::TextureAspect::HasColor,
             .width = (uint32_t)width,
             .height = (uint32_t)height,
@@ -161,6 +163,12 @@ struct Deferred : public ExampleFramework {
             BasicObjects::Cube::indices,
         });
         indexBuffer->SetBufferData(BasicObjects::Cube::indices);
+
+        imageDownloadBuffer = device->CreateBuffer({
+            RGL::BufferConfig::Type::StorageBuffer,
+            sizeof(uint32_t) * 4,
+            sizeof(uint32_t),
+         });
 
         updateGBuffers();
 
@@ -601,6 +609,12 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
+
+        if (selectedObject > 0) {
+            //TODO: render selected object a second time in wireframe mode
+        }
+
+
         commandBuffer->EndRendering();
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->End();
@@ -622,6 +636,33 @@ struct Deferred : public ExampleFramework {
         deferredRenderPass->SetAttachmentTexture(3, idTexture.get());
         
         dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
+    }
+
+    void updateSelectedObject() {
+        int x, y;
+        SDL_GetMouseState(&x, &y);
+        std::cout << std::format("Click! {} {}\n", x, y);
+
+        auto tmpcmd = commandQueue->CreateCommandBuffer();
+        auto tmpfence = device->CreateFence(false);
+        tmpcmd->Begin();
+       
+        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::TransferSourceOptimal, RGL::TransitionPosition::Top);
+        tmpcmd->CopyTextureToBuffer(idTexture.get(), { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
+        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
+
+        tmpcmd->End();
+        tmpcmd->Commit({
+            .signalFence = tmpfence
+            });
+        tmpfence->Wait();
+    }
+
+    void sampleevent(SDL_Event& event) final {
+        switch (event.type) {
+        case SDL_MOUSEBUTTONDOWN:
+            updateSelectedObject();
+        }
     }
 
     void sampleshutdown() final {
