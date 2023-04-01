@@ -721,6 +721,10 @@ struct Deferred : public ExampleFramework {
     void updateSelectedObject() {
         int x, y;
         SDL_GetMouseState(&x, &y);
+#if __APPLE__
+        x *= wmScaleFactor;
+        y *= wmScaleFactor;
+#endif
 
         auto tmpcmd = commandQueue->CreateCommandBuffer();
         auto tmpfence = device->CreateFence(false);
