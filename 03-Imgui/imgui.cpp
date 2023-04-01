@@ -229,6 +229,7 @@ void main(){
                 vertBufLen,
                 RGL::BufferConfig::Type::VertexBuffer,
                 sizeof(ImDrawVert),
+				RGL::BufferAccess::Shared
             });
         }
         if (!indexBuffer || indexBuffer->getBufferSize() < indBufLen){
@@ -236,6 +237,7 @@ void main(){
                 vertBufLen,
                 RGL::BufferConfig::Type::IndexBuffer,
                 sizeof(ImDrawIdx),
+				RGL::BufferAccess::Shared
             });
         }
 	}

@@ -139,13 +139,15 @@ struct Deferred : public ExampleFramework {
             RGL::BufferConfig::Type::VertexBuffer,
             sizeof(BasicObjects::Cube::Vertex),
             BasicObjects::Cube::vertices,
+            RGL::BufferAccess::Shared
         });
         vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
         
         screenTriVerts = device->CreateBuffer({
             RGL::BufferConfig::Type::VertexBuffer,
             sizeof(BasicObjects::ScreenTriangle::Vertex),
-            BasicObjects::ScreenTriangle::vertices
+            BasicObjects::ScreenTriangle::vertices,
+            RGL::BufferAccess::Shared
         });
         screenTriVerts->SetBufferData(BasicObjects::ScreenTriangle::vertices);
         
@@ -161,6 +163,7 @@ struct Deferred : public ExampleFramework {
             RGL::BufferConfig::Type::IndexBuffer,
             sizeof(BasicObjects::Cube::indices[0]),
             BasicObjects::Cube::indices,
+            RGL::BufferAccess::Shared
         });
         indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
@@ -168,7 +171,10 @@ struct Deferred : public ExampleFramework {
             RGL::BufferConfig::Type::StorageBuffer,
             sizeof(uint32_t) * 4,
             sizeof(uint32_t),
+            RGL::BufferAccess::Shared,
+            RGL::BufferFlags::TransferDestination
          });
+        imageDownloadBuffer->MapMemory();
 
         updateGBuffers();
 
@@ -641,7 +647,6 @@ struct Deferred : public ExampleFramework {
     void updateSelectedObject() {
         int x, y;
         SDL_GetMouseState(&x, &y);
-        std::cout << std::format("Click! {} {}\n", x, y);
 
         auto tmpcmd = commandQueue->CreateCommandBuffer();
         auto tmpfence = device->CreateFence(false);
@@ -656,6 +661,18 @@ struct Deferred : public ExampleFramework {
             .signalFence = tmpfence
             });
         tmpfence->Wait();
+
+        // now we have the pixel data, so we can read it
+        auto dataptr = imageDownloadBuffer->GetMappedDataPtr();
+        auto value = *static_cast<uint32_t*>(dataptr);
+        if (value == 0) {
+            selectedObject = -1;
+        }
+        else {
+            selectedObject = value;
+        }
+        std::cout << std::format("Click! Selected {} at {} {}\n", selectedObject, x, y);
+
     }
 
     void sampleevent(SDL_Event& event) final {
@@ -678,6 +695,7 @@ struct Deferred : public ExampleFramework {
         depthTexture.reset();
         colorTexture.reset();
         positionTexture.reset();
+        imageDownloadBuffer.reset();
         idTexture.reset();
         normalTexture.reset();
         lightingTexture.reset();

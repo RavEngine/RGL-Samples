@@ -54,6 +54,7 @@ struct Cubes : public ExampleFramework {
 			RGL::BufferConfig::Type::VertexBuffer,
 			sizeof(BasicObjects::Cube::Vertex),
             BasicObjects::Cube::vertices,
+			RGL::BufferAccess::Shared
 		});
 		vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
         
@@ -68,7 +69,8 @@ struct Cubes : public ExampleFramework {
         instanceDataBuffer = device->CreateBuffer({
            RGL::BufferConfig::Type::StorageBuffer,
             sizeof(decltype(cubeSpinSpeeds[0])),
-            cubeSpinSpeeds
+            cubeSpinSpeeds,
+			RGL::BufferAccess::Shared
         });
         instanceDataBuffer->SetBufferData(cubeSpinSpeeds);
         
@@ -77,6 +79,7 @@ struct Cubes : public ExampleFramework {
             RGL::BufferConfig::Type::IndexBuffer,
             sizeof(BasicObjects::Cube::indices[0]),
             BasicObjects::Cube::indices,
+			RGL::BufferAccess::Shared
         });
         indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
