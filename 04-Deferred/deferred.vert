@@ -2,7 +2,9 @@
 
 layout(push_constant) uniform UniformBufferObject{
     mat4 viewProj;
+    vec3 pos;
     float timeSinceStart;
+    uint objectID;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
@@ -22,11 +24,7 @@ float rand(vec2 co){
 void main() {
     const uint gridSize = 6;
 
-    vec3 pos = vec3(
-        (gl_InstanceID % gridSize - gridSize/2.0f) * 2.5,   // column
-        (gl_InstanceID / gridSize - gridSize/2.0f) * 2.5,    // row
-        0
-    );
+    vec3 pos = ubo.pos;
 
     const float scaleFactor = 1;
 
@@ -67,9 +65,9 @@ void main() {
     outNormal = normalize(normalmat * inNormal);
     outWorldpos = worldpos.xyz;
     outCubeColor = vec3(
-        rand(vec2(gl_InstanceID,gl_InstanceID)),
-        rand(vec2(gl_InstanceID+1,gl_InstanceID+1)),
-        rand(vec2(gl_InstanceID+2,gl_InstanceID+2))
+        rand(vec2(pos.x,pos.y)),
+        rand(vec2(pos.y,pos.z)),
+        rand(vec2(pos.z,pos.x))
     );
-    outID = gl_InstanceID;
+    outID = ubo.objectID;
 }

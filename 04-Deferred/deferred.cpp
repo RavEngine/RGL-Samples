@@ -12,8 +12,11 @@
 #undef CreateSemaphore
 #undef LoadImage
 
-constexpr static uint32_t nCubes = 36;
-static float cubeSpinSpeeds [nCubes]{0};
+static glm::vec3 cubePositions[]{
+    {0,0,0},
+    {3,0,0},
+    {-3,0,0}
+};
 
 struct Deferred : public ExampleFramework {
     RGLPipelineLayoutPtr deferredRenderPipelineLayout, lightRenderPipelineLayout, finalRenderPipelineLayout;
@@ -35,7 +38,9 @@ struct Deferred : public ExampleFramework {
     
     struct alignas(16) {
         glm::mat4 viewProj;
+        glm::vec3 pos;
         float timeSinceStart;
+        uint32_t objectID;
         
     } deferredStageUbo;
 
@@ -150,14 +155,6 @@ struct Deferred : public ExampleFramework {
             RGL::BufferAccess::Shared
         });
         screenTriVerts->SetBufferData(BasicObjects::ScreenTriangle::vertices);
-        
-        // seed the buffer with random values
-        std::random_device rd;
-        std::mt19937 mt{rd()};
-        std::uniform_real_distribution<> distr(-5, 5);
-        for(auto& value : cubeSpinSpeeds){
-            value = distr(mt);
-        }
         
         indexBuffer = device->CreateBuffer({
             RGL::BufferConfig::Type::IndexBuffer,
@@ -564,12 +561,16 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetScissor({
             .extent = {nextImgSize.width, nextImgSize.height}
         });
-        commandBuffer->SetVertexBytes(deferredStageUbo, 0);
+
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
-        commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
-            .nInstances = nCubes
-        });
+        for (uint32_t i = 0; i < std::size(cubePositions); i++) {
+            deferredStageUbo.pos = cubePositions[i];
+            deferredStageUbo.objectID = i + 1;      // id 0 is reserved for deselected
+            commandBuffer->SetVertexBytes(deferredStageUbo, 0);
+            commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
+        }
+
         commandBuffer->EndRendering();
         
         // then do the lighting pass
