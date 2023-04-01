@@ -20,7 +20,7 @@ static glm::vec3 cubePositions[]{
 
 struct Deferred : public ExampleFramework {
     RGLPipelineLayoutPtr deferredRenderPipelineLayout, lightRenderPipelineLayout, finalRenderPipelineLayout;
-    RGLRenderPipelinePtr deferredRenderPipeline, dirLightRenderPipeline, finalRenderPipeline;
+    RGLRenderPipelinePtr deferredRenderPipeline, dirLightRenderPipeline, finalRenderPipeline, selectionRenderPipeline;
     RGLBufferPtr vertexBuffer, indexBuffer, screenTriVerts, imageDownloadBuffer;
         
     RGLCommandBufferPtr commandBuffer;
@@ -139,6 +139,7 @@ struct Deferred : public ExampleFramework {
         auto screenTriVertexShader = GetShader("screentri.vert");
         auto dirLightFragmentShader = GetShader("dirlight.frag");
         auto finalFragmentShader = GetShader("final.frag");
+        auto wireframeFragmentShader = GetShader("selection.frag");
         
         vertexBuffer = device->CreateBuffer({
             RGL::BufferConfig::Type::VertexBuffer,
@@ -285,26 +286,26 @@ struct Deferred : public ExampleFramework {
                         .binding = 0,
                         .stride = sizeof(BasicObjects::Cube::Vertex),
                     },
-                        .attributeDescs = {
-                            {
-                                .location = 0,
-                                .binding = 0,
-                                .offset = offsetof(BasicObjects::Cube::Vertex,pos),
-                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
-                            },
-                            {
-                                .location = 1,
-                                .binding = 0,
-                                .offset = offsetof(BasicObjects::Cube::Vertex,normal),
-                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
-                            },
-                            {
-                                .location = 2,
-                                .binding = 0,
-                                .offset = offsetof(BasicObjects::Cube::Vertex,uv),
-                                .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
-                            }
+                    .attributeDescs = {
+                        {
+                            .location = 0,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 1,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 2,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,uv),
+                            .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                         }
+                    }
                 },
                 .inputAssembly = {
                     .topology = RGL::PrimitiveTopology::TriangleList,
@@ -397,6 +398,73 @@ struct Deferred : public ExampleFramework {
                 },
                 .pipelineLayout = finalRenderPipelineLayout,
         });
+        // permutations for the wireframe render
+        selectionRenderPipeline = device->CreateRenderPipeline({
+            .stages = {
+                {
+                    .type = RGL::ShaderStageDesc::Type::Vertex,
+                    .shaderModule = deferredVertexShader,
+                },
+                {
+                    .type = RGL::ShaderStageDesc::Type::Fragment,
+                    .shaderModule = wireframeFragmentShader,
+                }
+            },
+                .vertexConfig = {
+                    .vertexBindinDesc = {
+                        .binding = 0,
+                        .stride = sizeof(BasicObjects::Cube::Vertex),
+                    },
+                    .attributeDescs = {
+                        {
+                            .location = 0,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 1,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 2,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,uv),
+                            .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                        }
+                    }
+                },
+                .inputAssembly = {
+                    .topology = RGL::PrimitiveTopology::TriangleList,
+                },
+                .viewport = {
+                    .width = (float)width,
+                    .height = (float)height
+                },
+                .scissor = {
+                    .extent = {width, height}
+                },
+                .rasterizerConfig = {
+                    .polygonOverride = RGL::PolygonOverride::Line,
+                    .windingOrder = RGL::WindingOrder::Counterclockwise,     
+                },
+                .colorBlendConfig{
+                    .attachments = {
+                        {
+                            .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
+                        }
+                    }
+                },
+                .depthStencilConfig = {
+                    .depthFormat = RGL::TextureFormat::D32SFloat,
+                    .depthTestEnabled = false,
+                    .depthWriteEnabled = false,
+                    .depthFunction = RGL::DepthCompareFunction::Greater,
+                },
+                .pipelineLayout = deferredRenderPipelineLayout,
+            });
         
         dirLightRenderPipeline = device->CreateRenderPipeline({
             .stages = {
@@ -617,12 +685,17 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
 
-        if (selectedObject > 0) {
-            //TODO: render selected object a second time in wireframe mode
+        if (selectedObject > -1) {
+            // render selected object a second time in wireframe mode
+            commandBuffer->BindPipeline(selectionRenderPipeline);
+            commandBuffer->SetVertexBuffer(vertexBuffer);
+            commandBuffer->SetIndexBuffer(indexBuffer);
+            deferredStageUbo.pos = cubePositions[selectedObject - 1];
+            commandBuffer->SetVertexBytes(deferredStageUbo, 0);
+            commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
         }
-
-
         commandBuffer->EndRendering();
+
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->End();
         
@@ -672,8 +745,6 @@ struct Deferred : public ExampleFramework {
         else {
             selectedObject = value;
         }
-        std::cout << std::format("Click! Selected {} at {} {}\n", selectedObject, x, y);
-
     }
 
     void sampleevent(SDL_Event& event) final {
@@ -685,6 +756,7 @@ struct Deferred : public ExampleFramework {
 
     void sampleshutdown() final {
 
+        selectionRenderPipeline.reset();
         finalRenderPass.reset();
         finalRenderPipelineLayout.reset();
         lightRenderPipelineLayout.reset();
