@@ -32,7 +32,7 @@ namespace std{
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr renderPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, instanceDataBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
-    uint32_t ringStartIndex = 0;
+    uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0;
         
     RGLCommandBufferPtr commandBuffer;
     RGLTexturePtr depthTexture;
@@ -65,16 +65,6 @@ struct Asteroids : public ExampleFramework {
         
         auto vertexShaderLibrary = GetShader("cubes.vert");
         auto fragmentShaderLibrary = GetShader("cubes.frag");
-        
-        tinyobj::attrib_t planetAttrib, ringAttrib, astroidLod0Attrib, astroidLod1Attrib, astroidLod2Attrib;
-        std::vector<tinyobj::shape_t> planetShapes, ringShapes, astroiedLod0shapes, astroiedLod1shapes, astroiedLod2shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-        tinyobj::LoadObj(&planetAttrib, &planetShapes, &materials, &warn, &err, "planet.obj");
-        tinyobj::LoadObj(&ringAttrib, &ringShapes, &materials, &warn, &err, "ring.obj");
-        tinyobj::LoadObj(&astroidLod0Attrib, &astroiedLod0shapes, &materials, &warn, &err, "asteroid_lod0.obj");
-        tinyobj::LoadObj(&astroidLod1Attrib, &astroiedLod1shapes, &materials, &warn, &err, "asteroid_lod1.obj");
-        tinyobj::LoadObj(&astroidLod2Attrib, &astroiedLod2shapes, &materials, &warn, &err, "asteroid_lod2.obj");
         
         auto getMeshBuffers = [](const tinyobj::shape_t& meshShape, const tinyobj::attrib_t& meshAttrib){
             uint32_t totalIndices = 0;
@@ -112,31 +102,77 @@ struct Asteroids : public ExampleFramework {
             }
             return std::make_pair(meshVertices, meshIndices);
         };
-        auto planetData = getMeshBuffers(planetShapes[0], planetAttrib);
-        auto ringData = getMeshBuffers(ringShapes[0], ringAttrib);
-        // concatenate ring data into planet data
-        ringStartIndex = planetData.second.size();
-        const auto indexOffset = planetData.first.size();
-        std::transform(ringData.second.begin(), ringData.second.end(), ringData.second.begin(), [indexOffset](uint32_t index){
-            return index + indexOffset;
-        });
-        planetData.first.insert(planetData.first.end(), ringData.first.begin(), ringData.first.end());
-        planetData.second.insert(planetData.second.begin(), ringData.second.begin(), ringData.second.end());
-
-        planetVertexBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(objVertex) * planetData.first.size()),
-            RGL::BufferConfig::Type::VertexBuffer,
-            sizeof(objVertex),
-            RGL::BufferAccess::Shared
-        });
-        planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size()});
-        planetIndexBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(objVertex) * planetData.second.size()),
-            RGL::BufferConfig::Type::IndexBuffer,
-            sizeof(uint32_t),
-            RGL::BufferAccess::Shared
-        });
-        planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size()});
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
+        auto concatenateBuffers = [](auto& vertexData1, auto& indexData1, auto& vertexData2, auto& indexData2){
+            const auto nextMeshStartIndex = indexData1.size();
+            const auto indexOffset = vertexData1.size();
+            std::transform(indexData2.begin(), indexData2.end(), indexData2.begin(), [indexOffset](uint32_t index){
+                return index + indexOffset;
+            });
+            vertexData1.insert(vertexData1.end(), vertexData2.begin(), vertexData2.end());
+            indexData1.insert(indexData1.begin(), indexData2.begin(), indexData2.end());
+            return nextMeshStartIndex;
+        };
+        
+        // load planet data
+        {
+            tinyobj::attrib_t planetAttrib, ringAttrib;
+            std::vector<tinyobj::shape_t> planetShapes, ringShapes;
+            tinyobj::LoadObj(&planetAttrib, &planetShapes, &materials, &warn, &err, "planet.obj");
+            tinyobj::LoadObj(&ringAttrib, &ringShapes, &materials, &warn, &err, "ring.obj");
+            
+            auto planetData = getMeshBuffers(planetShapes[0], planetAttrib);
+            auto ringData = getMeshBuffers(ringShapes[0], ringAttrib);
+            // concatenate ring data into planet data
+            ringStartIndex = concatenateBuffers(planetData.first, planetData.second, ringData.first, ringData.second);
+            
+            planetVertexBuffer = device->CreateBuffer({
+                static_cast<uint32_t>(sizeof(objVertex) * planetData.first.size()),
+                RGL::BufferConfig::Type::VertexBuffer,
+                sizeof(objVertex),
+                RGL::BufferAccess::Shared
+            });
+            planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size()});
+            planetIndexBuffer = device->CreateBuffer({
+                static_cast<uint32_t>(sizeof(objVertex) * planetData.second.size()),
+                RGL::BufferConfig::Type::IndexBuffer,
+                sizeof(uint32_t),
+                RGL::BufferAccess::Shared
+            });
+            planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size()});
+        }
+        
+        // load asteroids
+        {
+            tinyobj::attrib_t astroidLod0Attrib, astroidLod1Attrib, astroidLod2Attrib;
+            std::vector<tinyobj::shape_t> astroiedLod0shapes, astroiedLod1shapes, astroiedLod2shapes;
+            tinyobj::LoadObj(&astroidLod0Attrib, &astroiedLod0shapes, &materials, &warn, &err, "asteroid_lod0.obj");
+            tinyobj::LoadObj(&astroidLod1Attrib, &astroiedLod1shapes, &materials, &warn, &err, "asteroid_lod1.obj");
+            tinyobj::LoadObj(&astroidLod2Attrib, &astroiedLod2shapes, &materials, &warn, &err, "asteroid_lod2.obj");
+            auto asteroidTotal = getMeshBuffers(astroiedLod0shapes[0], astroidLod0Attrib);
+            
+            auto asteroidNext = getMeshBuffers(astroiedLod1shapes[0],astroidLod1Attrib);
+            asteroidLod1StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
+            
+            asteroidNext = getMeshBuffers(astroiedLod2shapes[0],astroidLod2Attrib);
+            asteroidLod2StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
+            
+            asteroidVertexBuffer = device->CreateBuffer({
+                static_cast<uint32_t>(sizeof(objVertex) * asteroidTotal.first.size()),
+                RGL::BufferConfig::Type::VertexBuffer,
+                sizeof(objVertex),
+                RGL::BufferAccess::Shared
+            });
+            asteroidVertexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.first.data(),asteroidTotal.first.size()});
+            asteroidIndexBuffer = device->CreateBuffer({
+                static_cast<uint32_t>(sizeof(objVertex) * asteroidTotal.second.size()),
+                RGL::BufferConfig::Type::IndexBuffer,
+                sizeof(uint32_t),
+                RGL::BufferAccess::Shared
+            });
+            asteroidIndexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.second.data(),asteroidTotal.second.size()});
+        }
         
         createDepthTexture();
 
