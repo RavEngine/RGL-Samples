@@ -30,9 +30,10 @@ namespace std{
 }
 
 struct Asteroids : public ExampleFramework {
-    RGLRenderPipelinePtr renderPipeline;
+    RGLRenderPipelinePtr planetRenderPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, instanceDataBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
-    uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0;
+    uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
+    planetNIndicies = 0, ringNIndicies = 0;
         
     RGLCommandBufferPtr commandBuffer;
     RGLTexturePtr depthTexture;
@@ -42,12 +43,13 @@ struct Asteroids : public ExampleFramework {
     
     struct alignas(16) UniformBufferObject {
         glm::mat4 viewProj;
+        glm::vec3 pos;
         float timeSinceStart;
         
     } ubo;
     
     const char* SampleName() {
-        return "Cubes";
+        return "Asteroids";
     }
     void createDepthTexture()
     {
@@ -62,10 +64,8 @@ struct Asteroids : public ExampleFramework {
         );
     }
     void sampleinit(int argc, char** argv) final {
-        
-        auto vertexShaderLibrary = GetShader("cubes.vert");
-        auto fragmentShaderLibrary = GetShader("cubes.frag");
-        
+     
+#pragma mark Load Meshes
         auto getMeshBuffers = [](const tinyobj::shape_t& meshShape, const tinyobj::attrib_t& meshAttrib){
             uint32_t totalIndices = 0;
             std::unordered_map<objVertex, uint32_t> createdVertices;
@@ -123,7 +123,9 @@ struct Asteroids : public ExampleFramework {
             tinyobj::LoadObj(&ringAttrib, &ringShapes, &materials, &warn, &err, "ring.obj");
             
             auto planetData = getMeshBuffers(planetShapes[0], planetAttrib);
+            planetNIndicies = planetData.second.size();
             auto ringData = getMeshBuffers(ringShapes[0], ringAttrib);
+            ringNIndicies = ringData.second.size();
             // concatenate ring data into planet data
             ringStartIndex = concatenateBuffers(planetData.first, planetData.second, ringData.first, ringData.second);
             
@@ -133,14 +135,14 @@ struct Asteroids : public ExampleFramework {
                 sizeof(objVertex),
                 RGL::BufferAccess::Shared
             });
-            planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size()});
+            planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size() * sizeof(objVertex)});
             planetIndexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(objVertex) * planetData.second.size()),
+                static_cast<uint32_t>(sizeof(uint32_t) * planetData.second.size()),
                 RGL::BufferConfig::Type::IndexBuffer,
                 sizeof(uint32_t),
                 RGL::BufferAccess::Shared
             });
-            planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size()});
+            planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size() * sizeof(uint32_t)});
         }
         
         // load asteroids
@@ -164,49 +166,29 @@ struct Asteroids : public ExampleFramework {
                 sizeof(objVertex),
                 RGL::BufferAccess::Shared
             });
-            asteroidVertexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.first.data(),asteroidTotal.first.size()});
+            asteroidVertexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.first.data(),asteroidTotal.first.size() * sizeof(objVertex)});
             asteroidIndexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(objVertex) * asteroidTotal.second.size()),
+                static_cast<uint32_t>(sizeof(uint32_t) * asteroidTotal.second.size()),
                 RGL::BufferConfig::Type::IndexBuffer,
                 sizeof(uint32_t),
                 RGL::BufferAccess::Shared
             });
-            asteroidIndexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.second.data(),asteroidTotal.second.size()});
+            asteroidIndexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.second.data(),asteroidTotal.second.size() * sizeof(uint32_t)});
         }
         
         createDepthTexture();
+        
+#pragma mark Create Pipelines
 
-        // create a pipeline layout
-        // this describes what we *can* bind to the shader
-        RGL::PipelineLayoutDescriptor layoutConfig{
-            .bindings = {
-                {
-                    .binding = 0,
-                    .type = decltype(layoutConfig)::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
-                    .stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                {
-                    .binding = 1,
-                    .type = decltype(layoutConfig)::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
-                    .stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                {
-                    .binding = 2,
-                    .type = decltype(layoutConfig)::LayoutBindingDesc::Type::StorageBuffer,
-                    .descriptorCount = 1,
-                    .stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex,
-                },
-            },
-            .boundSamplers = {
-            },
+        auto vertexShaderLibrary = GetShader("vertex.vert");
+        auto planetFragmentShader = GetShader("planet.frag");
+        
+        auto renderPipelineLayout = device->CreatePipelineLayout({
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
-        };
-        auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+        });
 
         // create a render pipeline
-        renderPipeline = device->CreateRenderPipeline({
+        planetRenderPipeline = device->CreateRenderPipeline({
             .stages = {
                 {
                     .type = RGL::ShaderStageDesc::Type::Vertex,
@@ -214,13 +196,13 @@ struct Asteroids : public ExampleFramework {
                 },
                 {
                     .type = RGL::ShaderStageDesc::Type::Fragment,
-                    .shaderModule = fragmentShaderLibrary,
+                    .shaderModule = planetFragmentShader,
                 }
             },
             .vertexConfig = {
                 .vertexBindinDesc = {
                     .binding = 0,
-                    .stride = sizeof(BasicObjects::Cube::Vertex),
+                    .stride = sizeof(objVertex),
                 },
                 .attributeDescs = {
                     {
@@ -278,7 +260,7 @@ struct Asteroids : public ExampleFramework {
                     .format = RGL::TextureFormat::BGRA8_Unorm,
                     .loadOp = RGL::LoadAccessOperation::Clear,
                     .storeOp = RGL::StoreAccessOperation::Store,
-                    .clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
+                    .clearColor = {0,0,0, 1.0f},
                 }
             },
             .depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
@@ -325,12 +307,16 @@ struct Asteroids : public ExampleFramework {
                 .extent = {nextImgSize.width, nextImgSize.height}
             });
 
-        commandBuffer->BindPipeline(renderPipeline);
+        commandBuffer->BindPipeline(planetRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
-        commandBuffer->BindBuffer(instanceDataBuffer, 2);
+        
+        // draw the planet
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
-        commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
+        commandBuffer->DrawIndexed(planetNIndicies);
+        commandBuffer->DrawIndexed(ringNIndicies, {
+            .firstIndex = ringStartIndex
+        });
 
         commandBuffer->EndRendering();
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
@@ -360,7 +346,7 @@ struct Asteroids : public ExampleFramework {
         planetVertexBuffer.reset();
         planetIndexBuffer.reset();
 
-        renderPipeline.reset();
+        planetRenderPipeline.reset();
     }
 };
 
