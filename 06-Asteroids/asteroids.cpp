@@ -9,20 +9,36 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <random>
-#undef CreateSemaphore
-#undef LoadImage
+#include <tiny_obj_loader.h>
 
-constexpr static uint32_t nCubes = 36;
-static float cubeSpinSpeeds [nCubes]{0};
+struct objVertex{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+    bool operator==(const objVertex& other) const{
+        return pos == other.pos && normal == other.normal && uv == other.uv;
+    }
+};
+
+namespace std{
+    template<>
+    struct hash<objVertex>{
+        size_t operator()(const objVertex& vertex) const{
+            return std::bit_cast<uint32_t>(vertex.pos.x) ^ std::bit_cast<uint32_t>(vertex.pos.y) ^ std::bit_cast<uint32_t>(vertex.pos.z) ^ std::bit_cast<uint32_t>(vertex.normal.x) ^ std::bit_cast<uint32_t>(vertex.pos.y) ^ std::bit_cast<uint32_t>(vertex.normal.z) ^ std::bit_cast<uint32_t>(vertex.uv.x) ^ std::bit_cast<uint32_t>(vertex.uv.y);
+        }
+    };
+}
 
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr renderPipeline;
-    RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
+    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, instanceDataBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
+    uint32_t ringStartIndex = 0;
         
     RGLCommandBufferPtr commandBuffer;
-    RGLTexturePtr sampledTexture, depthTexture;
-    RGLSamplerPtr textureSampler;
+    RGLTexturePtr depthTexture;
     RGLRenderPassPtr renderPass;
+    
+   
     
     struct alignas(16) UniformBufferObject {
         glm::mat4 viewProj;
@@ -50,54 +66,79 @@ struct Asteroids : public ExampleFramework {
         auto vertexShaderLibrary = GetShader("cubes.vert");
         auto fragmentShaderLibrary = GetShader("cubes.frag");
         
-        vertexBuffer = device->CreateBuffer({
+        tinyobj::attrib_t planetAttrib, ringAttrib, astroidLod0Attrib, astroidLod1Attrib, astroidLod2Attrib;
+        std::vector<tinyobj::shape_t> planetShapes, ringShapes, astroiedLod0shapes, astroiedLod1shapes, astroiedLod2shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
+        tinyobj::LoadObj(&planetAttrib, &planetShapes, &materials, &warn, &err, "planet.obj");
+        tinyobj::LoadObj(&ringAttrib, &ringShapes, &materials, &warn, &err, "ring.obj");
+        tinyobj::LoadObj(&astroidLod0Attrib, &astroiedLod0shapes, &materials, &warn, &err, "asteroid_lod0.obj");
+        tinyobj::LoadObj(&astroidLod1Attrib, &astroiedLod1shapes, &materials, &warn, &err, "asteroid_lod1.obj");
+        tinyobj::LoadObj(&astroidLod2Attrib, &astroiedLod2shapes, &materials, &warn, &err, "asteroid_lod2.obj");
+        
+        auto getMeshBuffers = [](const tinyobj::shape_t& meshShape, const tinyobj::attrib_t& meshAttrib){
+            uint32_t totalIndices = 0;
+            std::unordered_map<objVertex, uint32_t> createdVertices;
+            std::vector<objVertex> meshVertices;
+            std::vector<uint32_t> meshIndices;
+            for(const auto& item : meshShape.mesh.indices){
+                uint32_t index = totalIndices;
+                objVertex vert{
+                    .pos = {
+                        meshAttrib.vertices[item.vertex_index],
+                        meshAttrib.vertices[item.vertex_index+1],
+                        meshAttrib.vertices[item.vertex_index+2]
+                    },
+                    .normal = {
+                        meshAttrib.normals[item.normal_index],
+                        meshAttrib.normals[item.normal_index+1],
+                        meshAttrib.normals[item.normal_index+2]
+                    },
+                    .uv{
+                        meshAttrib.texcoords[item.texcoord_index],
+                        meshAttrib.texcoords[item.texcoord_index+1],
+                    }
+                };
+                // does this vert already exist?
+                if (createdVertices.contains(vert)){
+                    index = createdVertices.at(vert);
+                }
+                else{
+                    // add it
+                    createdVertices[vert] = totalIndices++;
+                    meshVertices.push_back(vert);
+                }
+                meshIndices.push_back(index);
+            }
+            return std::make_pair(meshVertices, meshIndices);
+        };
+        auto planetData = getMeshBuffers(planetShapes[0], planetAttrib);
+        auto ringData = getMeshBuffers(ringShapes[0], ringAttrib);
+        // concatenate ring data into planet data
+        ringStartIndex = planetData.second.size();
+        const auto indexOffset = planetData.first.size();
+        std::transform(ringData.second.begin(), ringData.second.end(), ringData.second.begin(), [indexOffset](uint32_t index){
+            return index + indexOffset;
+        });
+        planetData.first.insert(planetData.first.end(), ringData.first.begin(), ringData.first.end());
+        planetData.second.insert(planetData.second.begin(), ringData.second.begin(), ringData.second.end());
+
+        planetVertexBuffer = device->CreateBuffer({
+            static_cast<uint32_t>(sizeof(objVertex) * planetData.first.size()),
             RGL::BufferConfig::Type::VertexBuffer,
-            sizeof(BasicObjects::Cube::Vertex),
-            BasicObjects::Cube::vertices,
+            sizeof(objVertex),
             RGL::BufferAccess::Shared
         });
-        vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
-        
-        // seed the buffer with random values
-        std::random_device rd;
-        std::mt19937 mt{rd()};
-        std::uniform_real_distribution<> distr(-5, 5);
-        for(auto& value : cubeSpinSpeeds){
-            value = distr(mt);
-        }
-        
-        instanceDataBuffer = device->CreateBuffer({
-           RGL::BufferConfig::Type::StorageBuffer,
-            sizeof(decltype(cubeSpinSpeeds[0])),
-            cubeSpinSpeeds,
-            RGL::BufferAccess::Shared
-        });
-        instanceDataBuffer->SetBufferData(cubeSpinSpeeds);
-        
-        
-        indexBuffer = device->CreateBuffer({
+        planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size()});
+        planetIndexBuffer = device->CreateBuffer({
+            static_cast<uint32_t>(sizeof(objVertex) * planetData.second.size()),
             RGL::BufferConfig::Type::IndexBuffer,
-            sizeof(BasicObjects::Cube::indices[0]),
-            BasicObjects::Cube::indices,
+            sizeof(uint32_t),
             RGL::BufferAccess::Shared
         });
-        indexBuffer->SetBufferData(BasicObjects::Cube::indices);
-
-        auto imagedata = LoadImage("tx1.png");
-
-        sampledTexture = device->CreateTextureWithData(RGL::TextureConfig{
-            .usage = (RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferDestination),
-            .aspect = RGL::TextureAspect::HasColor,
-            .width = imagedata.width,
-            .height = imagedata.height,
-            .format = RGL::TextureFormat::RGBA8_Unorm
-            },
-            imagedata.bytes
-        );
-
+        planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size()});
+        
         createDepthTexture();
-
-        textureSampler = device->CreateSampler({});
 
         // create a pipeline layout
         // this describes what we *can* bind to the shader
@@ -123,7 +164,6 @@ struct Asteroids : public ExampleFramework {
                 },
             },
             .boundSamplers = {
-                textureSampler
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
         };
@@ -252,12 +292,9 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->BindPipeline(renderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->BindBuffer(instanceDataBuffer, 2);
-        commandBuffer->SetVertexBuffer(vertexBuffer);
-        commandBuffer->SetIndexBuffer(indexBuffer);
-        commandBuffer->SetCombinedTextureSampler(textureSampler, sampledTexture.get(), 0);
-        commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
-            .nInstances = nCubes
-        });
+        commandBuffer->SetVertexBuffer(planetVertexBuffer);
+        commandBuffer->SetIndexBuffer(planetIndexBuffer);
+        commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
 
         commandBuffer->EndRendering();
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
@@ -281,13 +318,11 @@ struct Asteroids : public ExampleFramework {
         instanceDataBuffer.reset();
         renderPass.reset();
         depthTexture.reset();
-        sampledTexture.reset();
-        textureSampler.reset();
         commandBuffer.reset();
         commandQueue.reset();
 
-        vertexBuffer.reset();
-        indexBuffer.reset();
+        planetVertexBuffer.reset();
+        planetIndexBuffer.reset();
 
         renderPipeline.reset();
     }

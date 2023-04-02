@@ -36,6 +36,7 @@ add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
 add_subdirectory(deps/imgui-cmake EXCLUDE_FROM_ALL)
 add_subdirectory(deps/OpenXR-SDK EXCLUDE_FROM_ALL)
+add_subdirectory(deps/tinyobjloader EXCLUDE_FROM_ALL)
 
 if(CMAKE_CROSSCOMPILING)
 	set(RGL_ENABLE_RGLC OFF CACHE INTERNAL "")
@@ -212,6 +213,11 @@ add_sample(06-Asteroids)
 target_link_libraries(05-XR
 	PUBLIC
 		openxr_loader
+)
+
+target_link_libraries(06-Asteroids
+	PUBLIC
+		tinyobjloader
 )
 
 set_target_properties(
