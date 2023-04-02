@@ -207,6 +207,7 @@ add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
 add_sample(05-XR)
+add_sample(06-Asteroids)
 
 target_link_libraries(05-XR
 	PUBLIC
