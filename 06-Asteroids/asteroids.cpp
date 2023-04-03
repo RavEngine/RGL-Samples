@@ -31,15 +31,13 @@ namespace std{
 
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline;
-    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, instanceDataBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
+    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
     uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
     planetNIndicies = 0, ringNIndicies = 0;
         
     RGLCommandBufferPtr commandBuffer;
     RGLTexturePtr depthTexture;
     RGLRenderPassPtr renderPass;
-    
-   
     
     struct alignas(16) UniformBufferObject {
         glm::mat4 viewProj;
@@ -348,7 +346,6 @@ struct Asteroids : public ExampleFramework {
 
     void sampleshutdown() final {
 
-        instanceDataBuffer.reset();
         renderPass.reset();
         depthTexture.reset();
         commandBuffer.reset();
