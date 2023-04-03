@@ -30,7 +30,7 @@ namespace std{
 }
 
 struct Asteroids : public ExampleFramework {
-    RGLRenderPipelinePtr planetRenderPipeline;
+    RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, instanceDataBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
     uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
     planetNIndicies = 0, ringNIndicies = 0;
@@ -181,78 +181,82 @@ struct Asteroids : public ExampleFramework {
 #pragma mark Create Pipelines
 
         auto vertexShaderLibrary = GetShader("vertex.vert");
-        auto planetFragmentShader = GetShader("planet.frag");
         
         auto renderPipelineLayout = device->CreatePipelineLayout({
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
         });
+        
+        auto createPipelineDescriptor = [this,&renderPipelineLayout](RGLShaderLibraryPtr vertexShader, RGLShaderLibraryPtr fragmentShader){
+            return RGL::RenderPipelineDescriptor{
+                .stages = {
+                    {
+                        .type = RGL::ShaderStageDesc::Type::Vertex,
+                        .shaderModule = vertexShader,
+                    },
+                    {
+                        .type = RGL::ShaderStageDesc::Type::Fragment,
+                        .shaderModule = fragmentShader,
+                    }
+                },
+                .vertexConfig = {
+                    .vertexBindinDesc = {
+                        .binding = 0,
+                        .stride = sizeof(objVertex),
+                    },
+                    .attributeDescs = {
+                        {
+                            .location = 0,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 1,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                            .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                        },
+                        {
+                            .location = 2,
+                            .binding = 0,
+                            .offset = offsetof(BasicObjects::Cube::Vertex,uv),
+                            .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
+                        }
+                    }
+                },
+                .inputAssembly = {
+                    .topology = RGL::PrimitiveTopology::TriangleList,
+                },
+                .viewport = {
+                    .width = (float)width,
+                    .height = (float)height
+                },
+                .scissor = {
+                    .extent = {width, height}
+                },
+                .rasterizerConfig = {
+                    .windingOrder = RGL::WindingOrder::Counterclockwise,
+                },
+                .colorBlendConfig{
+                    .attachments = {
+                        {
+                            .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
+                        }
+                    }
+                },
+                .depthStencilConfig = {
+                    .depthFormat = RGL::TextureFormat::D32SFloat,
+                    .depthTestEnabled = true,
+                    .depthWriteEnabled = true,
+                    .depthFunction = RGL::DepthCompareFunction::Less,
+                },
+                .pipelineLayout = renderPipelineLayout,
+            };
+        };
 
         // create a render pipeline
-        planetRenderPipeline = device->CreateRenderPipeline({
-            .stages = {
-                {
-                    .type = RGL::ShaderStageDesc::Type::Vertex,
-                    .shaderModule = vertexShaderLibrary,
-                },
-                {
-                    .type = RGL::ShaderStageDesc::Type::Fragment,
-                    .shaderModule = planetFragmentShader,
-                }
-            },
-            .vertexConfig = {
-                .vertexBindinDesc = {
-                    .binding = 0,
-                    .stride = sizeof(objVertex),
-                },
-                .attributeDescs = {
-                    {
-                        .location = 0,
-                        .binding = 0,
-                        .offset = offsetof(BasicObjects::Cube::Vertex,pos),
-                        .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
-                    },
-                    {
-                        .location = 1,
-                        .binding = 0,
-                        .offset = offsetof(BasicObjects::Cube::Vertex,normal),
-                        .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
-                    },
-                    {
-                        .location = 2,
-                        .binding = 0,
-                        .offset = offsetof(BasicObjects::Cube::Vertex,uv),
-                        .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
-                    }
-                }
-            },
-            .inputAssembly = {
-                .topology = RGL::PrimitiveTopology::TriangleList,
-            },
-            .viewport = {
-                .width = (float)width,
-                .height = (float)height
-            },
-            .scissor = {
-                .extent = {width, height}
-            },
-            .rasterizerConfig = {
-                .windingOrder = RGL::WindingOrder::Counterclockwise,
-            },
-            .colorBlendConfig{
-                .attachments = {
-                    {
-                        .format = RGL::TextureFormat::BGRA8_Unorm    // specify attachment data
-                    }
-                }
-            },
-            .depthStencilConfig = {
-                .depthFormat = RGL::TextureFormat::D32SFloat,
-                .depthTestEnabled = true,
-                .depthWriteEnabled = true,
-                .depthFunction = RGL::DepthCompareFunction::Less,
-            },
-            .pipelineLayout = renderPipelineLayout,
-        });
+        planetRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("planet.frag")));
+        ringRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("ring.frag")));
         
         renderPass = RGL::CreateRenderPass({
             .attachments = {
@@ -307,6 +311,7 @@ struct Asteroids : public ExampleFramework {
                 .extent = {nextImgSize.width, nextImgSize.height}
             });
 
+        // draw planet and ring
         commandBuffer->BindPipeline(planetRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         
@@ -314,6 +319,12 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
         commandBuffer->DrawIndexed(planetNIndicies);
+        
+        // draw ring
+        commandBuffer->BindPipeline(ringRenderPipeline);
+        commandBuffer->SetVertexBytes(ubo, 0);
+        commandBuffer->SetVertexBuffer(planetVertexBuffer);
+        commandBuffer->SetIndexBuffer(planetIndexBuffer);
         commandBuffer->DrawIndexed(ringNIndicies, {
             .firstIndex = ringStartIndex
         });
