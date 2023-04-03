@@ -75,18 +75,18 @@ struct Asteroids : public ExampleFramework {
                 uint32_t index = totalIndices;
                 objVertex vert{
                     .pos = {
-                        meshAttrib.vertices[item.vertex_index],
-                        meshAttrib.vertices[item.vertex_index+1],
-                        meshAttrib.vertices[item.vertex_index+2]
+                        meshAttrib.vertices[3 * item.vertex_index],
+                        meshAttrib.vertices[3 * item.vertex_index+1],
+                        meshAttrib.vertices[3 * item.vertex_index+2]
                     },
                     .normal = {
-                        meshAttrib.normals[item.normal_index],
-                        meshAttrib.normals[item.normal_index+1],
-                        meshAttrib.normals[item.normal_index+2]
+                        meshAttrib.normals[3 * item.normal_index],
+                        meshAttrib.normals[3 * item.normal_index+1],
+                        meshAttrib.normals[3 * item.normal_index+2]
                     },
                     .uv{
-                        meshAttrib.texcoords[item.texcoord_index],
-                        meshAttrib.texcoords[item.texcoord_index+1],
+                        meshAttrib.texcoords[2 * item.texcoord_index],
+                        meshAttrib.texcoords[2 * item.texcoord_index+1],
                     }
                 };
                 // does this vert already exist?
@@ -111,7 +111,7 @@ struct Asteroids : public ExampleFramework {
                 return index + indexOffset;
             });
             vertexData1.insert(vertexData1.end(), vertexData2.begin(), vertexData2.end());
-            indexData1.insert(indexData1.begin(), indexData2.begin(), indexData2.end());
+            indexData1.insert(indexData1.end(), indexData2.begin(), indexData2.end());
             return nextMeshStartIndex;
         };
         
