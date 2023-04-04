@@ -4,9 +4,12 @@ float rand(vec2 co){
 }
 
 vec3 genAsteroidInitialPosition(uint pos){
-    return vec3(
-                rand(vec2(pos,-pos)),
-                rand(vec2(-pos,pos)),
-                rand(vec2(-pos,-pos))
+    const float maxScale = 100;
+    vec3 randpos = vec3(
+                rand(vec2(pos,-int(pos))),
+                rand(vec2(-int(pos),pos)),
+                rand(vec2(-int(pos),-int(pos)))
                 );
+
+    return (randpos * rand(vec2(randpos.x,randpos.y))) * maxScale;
 }

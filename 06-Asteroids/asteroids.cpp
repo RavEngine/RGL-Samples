@@ -30,7 +30,7 @@ namespace std{
 }
 
 struct Asteroids : public ExampleFramework {
-    RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline;
+    RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
     uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
     planetNIndicies = 0, ringNIndicies = 0;
@@ -255,6 +255,7 @@ struct Asteroids : public ExampleFramework {
         // create a render pipeline
         planetRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("planet.frag")));
         ringRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("ring.frag")));
+        asteroidRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(GetShader("asteroid.vert"), GetShader("asteroid.frag")));
         
         renderPass = RGL::CreateRenderPass({
             .attachments = {
@@ -325,6 +326,15 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
         commandBuffer->DrawIndexed(ringNIndicies, {
             .firstIndex = ringStartIndex
+        });
+        
+        // draw asteroids
+        commandBuffer->BindPipeline(asteroidRenderPipeline);
+        commandBuffer->SetVertexBytes(ubo, 0);
+        commandBuffer->SetVertexBuffer(asteroidVertexBuffer);
+        commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
+        commandBuffer->DrawIndexed(asteroidLod1StartIndex, {
+            .nInstances = 128
         });
 
         commandBuffer->EndRendering();
