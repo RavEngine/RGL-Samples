@@ -29,9 +29,11 @@ namespace std{
     };
 }
 
+constexpr static uint32_t nAsteriods = 128;
+
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
-    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer;
+    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer;
     uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
     planetNIndicies = 0, ringNIndicies = 0;
         
@@ -62,6 +64,13 @@ struct Asteroids : public ExampleFramework {
         );
     }
     void sampleinit(int argc, char** argv) final {
+        
+        indirectBuffer = device->CreateBuffer({
+            static_cast<uint32_t>(sizeof(glm::uvec4) * nAsteriods),
+            RGL::BufferConfig::Type::IndirectBuffer,
+            sizeof(glm::uvec4),
+            RGL::BufferAccess::Private
+        });
      
 #pragma mark Load Meshes
         auto getMeshBuffers = [](const tinyobj::shape_t& meshShape, const tinyobj::attrib_t& meshAttrib){
@@ -334,7 +343,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetVertexBuffer(asteroidVertexBuffer);
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
         commandBuffer->DrawIndexed(asteroidLod1StartIndex, {
-            .nInstances = 128
+            .nInstances = nAsteriods
         });
 
         commandBuffer->EndRendering();
@@ -363,8 +372,13 @@ struct Asteroids : public ExampleFramework {
 
         planetVertexBuffer.reset();
         planetIndexBuffer.reset();
+        asteroidVertexBuffer.reset();
+        asteroidIndexBuffer.reset();
+        indirectBuffer.reset();
 
         planetRenderPipeline.reset();
+        asteroidRenderPipeline.reset();
+        ringRenderPipeline.reset();
     }
 };
 
