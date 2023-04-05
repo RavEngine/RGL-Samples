@@ -214,19 +214,19 @@ struct Asteroids : public ExampleFramework {
                         {
                             .location = 0,
                             .binding = 0,
-                            .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                            .offset = offsetof(objVertex,pos),
                             .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
                         },
                         {
                             .location = 1,
                             .binding = 0,
-                            .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                            .offset = offsetof(objVertex,normal),
                             .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
                         },
                         {
                             .location = 2,
                             .binding = 0,
-                            .offset = offsetof(BasicObjects::Cube::Vertex,uv),
+                            .offset = offsetof(objVertex,uv),
                             .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                         }
                     }
