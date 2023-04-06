@@ -77,7 +77,8 @@ layout(location = 1) in vec4 inColor;
 layout(location = 0) out vec4 outColor;
 void main(){
 
-    outColor = inColor * texture(texSampler, inUV);
+	vec4 texColor = texture(texSampler, inUV);
+    outColor = inColor * texColor;
 }
 )";
         
@@ -214,7 +215,8 @@ void main(){
 			.aspect = RGL::TextureAspect::HasColor,
 			.width = static_cast<uint32_t>(width),
 			.height = static_cast<uint32_t>(height),
-			.format = RGL::TextureFormat::RGBA8_Unorm
+			.format = RGL::TextureFormat::RGBA8_Unorm,
+			.debugName = "ImGui Font Texture"
 			},
              {pixels, static_cast<size_t>(width * height * 4)}
 		);

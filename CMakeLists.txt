@@ -98,7 +98,11 @@ macro(add_sample dir)
     file(GLOB_RECURSE RESOURCES "${dir}/*.png" "${dir}/*.obj")
 	if (APPLE)
 		set(ADDITIONALS ${RESOURCES})
-	else()
+	endif()
+
+	add_executable(${dir} ${SOURCES} ${ADDITIONALS} "iosLaunchScreen.storyboard")
+
+	if (NOT APPLE)
 		foreach(FILE ${RESOURCES})
 			get_filename_component(output_name "${FILE}" NAME)
 			set(outname "${CMAKE_BINARY_DIR}/$<CONFIGURATION>/${output_name}")
@@ -107,9 +111,10 @@ macro(add_sample dir)
 				COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILE} "${outname}"
 				DEPENDS ${FILE}
 			)
+			list(APPEND target_assets "${outname}")
 		endforeach()
 	endif()
-	add_executable(${dir} ${SOURCES} ${ADDITIONALS} "iosLaunchScreen.storyboard")
+
 	target_compile_features(${dir} PRIVATE cxx_std_20)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "${dir}")
 
@@ -210,7 +215,7 @@ macro(add_sample dir)
 	endforeach()
 
 	add_custom_target(${dir}_CompileShaders
-		DEPENDS ${all_shaders}
+		DEPENDS ${all_shaders} ${target_assets}
 	)
 	add_dependencies(${dir} ${dir}_CompileShaders)
 	add_dependencies(${dir}_CompileShaders rglc)
