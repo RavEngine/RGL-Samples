@@ -95,8 +95,21 @@ target_link_libraries(${PROJECT_NAME}-Common
 macro(add_sample dir)
 	set(dir "${CMAKE_CURRENT_LIST_DIR}/${dir}")
 	file(GLOB_RECURSE SOURCES "${dir}/*.cpp" "${dir}/*.hpp" "${dir}/*.h")
-     file(GLOB_RECURSE RESOURCES "${dir}/*.png" "${dir}/*.obj")
-	add_executable(${dir} ${SOURCES} ${RESOURCES} "iosLaunchScreen.storyboard")
+    file(GLOB_RECURSE RESOURCES "${dir}/*.png" "${dir}/*.obj")
+	if (APPLE)
+		set(ADDITIONALS ${RESOURCES})
+	else()
+		foreach(FILE ${RESOURCES})
+			get_filename_component(output_name "${FILE}" NAME)
+			set(outname "${CMAKE_BINARY_DIR}/$<CONFIGURATION>/${output_name}")
+			add_custom_command(PRE_BUILD 
+				OUTPUT "${outname}" 
+				COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FILE} "${outname}"
+				DEPENDS ${FILE}
+			)
+		endforeach()
+	endif()
+	add_executable(${dir} ${SOURCES} ${ADDITIONALS} "iosLaunchScreen.storyboard")
 	target_compile_features(${dir} PRIVATE cxx_std_20)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "${dir}")
 
