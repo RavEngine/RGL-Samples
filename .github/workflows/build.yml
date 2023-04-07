@@ -1,0 +1,55 @@
+name: CI
+on: push
+
+jobs:
+  build-linux:
+    name: Windows Check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Configure
+        run: |
+            mkdir build
+            cd build
+            cmake -G "Visual Studio" ..
+      - name: Build
+        run: |
+            cd build
+            cmake --build . --target install
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name:  RGL_Samples_win64
+          path: |
+                build/Release/*.exe
+                build/Release/*.cso
+                build/Release/*.obj
+                build/Release/*.png
+
+  build-mac:
+    name: macOS Check
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Configure
+        run: |
+            mkdir build
+            cd build
+            cmake -G "Xcode" ..
+      - name: Build
+        run: |
+            cd build
+            cmake --build . --target install
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+            name:  RGL_Samples_win64
+            path: |
+                build/Release/*.app
+    

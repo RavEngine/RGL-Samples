@@ -225,7 +225,9 @@ add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
-add_sample(05-XR)
+if (not APPLE)				# OpenXR is not supported on Apple platforms
+	add_sample(05-XR)
+endif()
 add_sample(06-Asteroids)
 
 target_link_libraries(05-XR
