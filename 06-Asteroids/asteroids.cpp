@@ -33,6 +33,7 @@ constexpr static uint32_t nAsteriods = 128;
 
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
+    RGLComputePipelinePtr lodPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer;
     uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
     planetNIndicies = 0, ringNIndicies = 0;
@@ -288,6 +289,25 @@ struct Asteroids : public ExampleFramework {
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
+
+        // create the compute pipeline for use in deciding LOD
+
+        auto lodPipelineLayout = device->CreatePipelineLayout({
+            .bindings = {
+                {
+                    .binding = 2,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
+                }
+            }
+        });
+        lodPipeline = device->CreateComputePipeline({
+            .stage = {
+                .type = RGL::ShaderStageDesc::Type::Compute,
+                .shaderModule = GetShader("asteroid.comp")
+            },
+            .pipelineLayout = lodPipelineLayout
+        });
         
         camera.position.z = 10;
     }
@@ -379,6 +399,7 @@ struct Asteroids : public ExampleFramework {
         planetRenderPipeline.reset();
         asteroidRenderPipeline.reset();
         ringRenderPipeline.reset();
+        lodPipeline.reset();
     }
 };
 

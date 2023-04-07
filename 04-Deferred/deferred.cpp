@@ -189,13 +189,11 @@ struct Deferred : public ExampleFramework {
                 {
                     .binding = 0,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                 {
                     .binding = 1,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
             },
@@ -212,49 +210,41 @@ struct Deferred : public ExampleFramework {
                  {
                     .binding = 0,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                  {
                     .binding = 1,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                  {
                     .binding = 2,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                  {
                     .binding = 3,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                 {
                     .binding = 4,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },       
                 {
                     .binding = 5,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },        
                 {
                     .binding = 6,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                 {
                     .binding = 7,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .descriptorCount = 1,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
             },

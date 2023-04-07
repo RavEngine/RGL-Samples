@@ -106,19 +106,16 @@ struct Cubes : public ExampleFramework {
 				{
 					.binding = 0,
 					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::CombinedImageSampler,
-					.descriptorCount = 1,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
 				{
 					.binding = 1,
 					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::SampledImage,
-					.descriptorCount = 1,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
 				{
 					.binding = 2,
 					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::StorageBuffer,
-					.descriptorCount = 1,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex,
 				},
 			},
