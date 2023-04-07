@@ -148,7 +148,7 @@ macro(add_sample dir)
 		)
 	endmacro()
 
-	file(GLOB all_shaders "${dir}/*.vert" "${dir}/*.frag")
+	file(GLOB all_shaders "${dir}/*.vert" "${dir}/*.frag" "${dir}/*.comp")
 
 	target_sources(${dir} PUBLIC ${all_shaders})
 	set_source_files_properties(${all_shaders} PROPERTIES
@@ -203,6 +203,34 @@ macro(add_sample dir)
 		endif()
 		if(RGL_MTL_AVAILABLE)
 			shader_compile("${FILE}" "fragment" "Metal" "metal" "")
+			target_sources(${dir} PUBLIC ${outname})
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				HEADER_FILE_ONLY OFF
+				LANGUAGE METAL
+				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
+                COMPILE_FLAGS "-gline-tables-only -frecord-sources" # enable shader source debugging
+			)
+		endif()
+	endforeach()
+	file(GLOB all_computes "${dir}/*.comp")
+	foreach(FILE ${all_computes})
+		if(RGL_VK_AVAILABLE)
+			shader_compile("${FILE}" "compute" "Vulkan" "spv" "")
+		endif()
+		if(RGL_DX12_AVAILABLE)
+			shader_compile("${FILE}" "compute" "Direct3D12" "hlsl" "")
+			target_sources(${dir} PUBLIC ${outname})
+			set_source_files_properties(${outname} PROPERTIES 
+				GENERATED TRUE
+				VS_SHADER_MODEL "6.4"
+				VS_SHADER_TYPE "Compute"
+				VS_SHADER_ENABLE_DEBUG ON
+				VS_SHADER_DISABLE_OPTIMIZATIONS ON
+			)
+		endif()
+		if(RGL_MTL_AVAILABLE)
+			shader_compile("${FILE}" "compute" "Metal" "metal" "")
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
