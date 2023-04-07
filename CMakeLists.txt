@@ -255,13 +255,13 @@ add_sample(03-Imgui)
 add_sample(04-Deferred)
 if (NOT APPLE)				# OpenXR is not supported on Apple platforms
 	add_sample(05-XR)
+	target_link_libraries(05-XR
+	PUBLIC
+		openxr_loader
+	)
 endif()
 add_sample(06-Asteroids)
 
-target_link_libraries(05-XR
-	PUBLIC
-		openxr_loader
-)
 
 target_link_libraries(06-Asteroids
 	PUBLIC
