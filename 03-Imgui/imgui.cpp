@@ -303,7 +303,7 @@ void main(){
         commandBuffer->Begin();
 		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(renderPass);
-        commandBuffer->BindPipeline(renderPipeline);
+        commandBuffer->BindRenderPipeline(renderPipeline);
 
 		size_t vertexBufferOffset = 0;
 		size_t indexBufferOffset = 0;

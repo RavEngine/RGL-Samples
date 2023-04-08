@@ -327,6 +327,10 @@ struct Asteroids : public ExampleFramework {
         auto nextImgSize = nextimg->GetSize();
 
         renderPass->SetAttachmentTexture(0, nextimg);
+        
+        commandBuffer->BeginCompute(lodPipeline);
+        commandBuffer->DispatchCompute(nAsteriods, 1, 1);
+        commandBuffer->EndCompute();
 
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(renderPass);
@@ -340,7 +344,7 @@ struct Asteroids : public ExampleFramework {
             });
 
         // draw planet and ring
-        commandBuffer->BindPipeline(planetRenderPipeline);
+        commandBuffer->BindRenderPipeline(planetRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         
         // draw the planet
@@ -349,7 +353,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->DrawIndexed(planetNIndicies);
         
         // draw ring
-        commandBuffer->BindPipeline(ringRenderPipeline);
+        commandBuffer->BindRenderPipeline(ringRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
@@ -357,8 +361,9 @@ struct Asteroids : public ExampleFramework {
             .firstIndex = ringStartIndex
         });
         
+        
         // draw asteroids
-        commandBuffer->BindPipeline(asteroidRenderPipeline);
+        commandBuffer->BindRenderPipeline(asteroidRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(asteroidVertexBuffer);
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
