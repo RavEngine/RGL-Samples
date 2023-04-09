@@ -68,7 +68,7 @@ struct Asteroids : public ExampleFramework {
         
         indirectBuffer = device->CreateBuffer({
             static_cast<uint32_t>(sizeof(glm::uvec4) * nAsteriods),
-            RGL::BufferConfig::Type::IndirectBuffer,
+            RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
             sizeof(glm::uvec4),
             RGL::BufferAccess::Private
         });
@@ -329,6 +329,7 @@ struct Asteroids : public ExampleFramework {
         renderPass->SetAttachmentTexture(0, nextimg);
         
         commandBuffer->BeginCompute(lodPipeline);
+        commandBuffer->BindComputeBuffer(indirectBuffer, 2);
         commandBuffer->DispatchCompute(nAsteriods, 1, 1);
         commandBuffer->EndCompute();
 
