@@ -1,4 +1,10 @@
 
+layout(push_constant) uniform UniformBufferObject{
+    mat4 viewProj;
+    vec3 pos;
+    float timeSinceStart;
+} ubo;
+
 float rand(vec2 co){
   return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }

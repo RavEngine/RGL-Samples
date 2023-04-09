@@ -299,7 +299,8 @@ struct Asteroids : public ExampleFramework {
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
                 }
-            }
+            },
+            .constants = {{ ubo, 0, RGL::StageVisibility::Compute}}
         });
         lodPipeline = device->CreateComputePipeline({
             .stage = {
@@ -329,6 +330,7 @@ struct Asteroids : public ExampleFramework {
         renderPass->SetAttachmentTexture(0, nextimg);
         
         commandBuffer->BeginCompute(lodPipeline);
+        commandBuffer->SetComputeBytes(ubo,0);
         commandBuffer->BindComputeBuffer(indirectBuffer, 2);
         commandBuffer->DispatchCompute(nAsteriods, 1, 1);
         commandBuffer->EndCompute();
