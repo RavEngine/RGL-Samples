@@ -70,7 +70,8 @@ struct Asteroids : public ExampleFramework {
             static_cast<uint32_t>(sizeof(glm::uvec4) * nAsteriods),
             RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
             sizeof(glm::uvec4),
-            RGL::BufferAccess::Private
+            RGL::BufferAccess::Private,
+            RGL::BufferFlags::Writable
         });
      
 #pragma mark Load Meshes
@@ -298,6 +299,7 @@ struct Asteroids : public ExampleFramework {
                     .binding = 2,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
+                    .writable = true
                 }
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Compute}}
