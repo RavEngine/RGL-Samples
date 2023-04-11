@@ -239,7 +239,7 @@ struct HelloWorld : public AppBase {
 				.extent = {nextImgSize.width, nextImgSize.height}
 			});
 
-		commandBuffer->BindPipeline(renderPipeline);
+		commandBuffer->BindRenderPipeline(renderPipeline);
 		commandBuffer->SetVertexBytes(ubo, 0);
 
 		commandBuffer->SetVertexBuffer(vertexBuffer);

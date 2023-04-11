@@ -611,7 +611,7 @@ struct Deferred : public ExampleFramework {
         }
 
         commandBuffer->BeginRendering(deferredRenderPass);
-        commandBuffer->BindPipeline(deferredRenderPipeline);
+        commandBuffer->BindRenderPipeline(deferredRenderPipeline);
         commandBuffer->SetViewport({
             .width = static_cast<float>(nextImgSize.width),
             .height = static_cast<float>(nextImgSize.height),
@@ -638,7 +638,7 @@ struct Deferred : public ExampleFramework {
         commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 
         commandBuffer->BeginRendering(dirLightRenderPass);
-        commandBuffer->BindPipeline(dirLightRenderPipeline);
+        commandBuffer->BindRenderPipeline(dirLightRenderPipeline);
         commandBuffer->SetViewport({
             .width = static_cast<float>(nextImgSize.width),
             .height = static_cast<float>(nextImgSize.height),
@@ -669,7 +669,7 @@ struct Deferred : public ExampleFramework {
                 .extent = {nextImgSize.width, nextImgSize.height}
             });
 
-        commandBuffer->BindPipeline(finalRenderPipeline);
+        commandBuffer->BindRenderPipeline(finalRenderPipeline);
         commandBuffer->SetCombinedTextureSampler(textureSampler, lightingTexture.get(), 0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
@@ -677,7 +677,7 @@ struct Deferred : public ExampleFramework {
 
         if (selectedObject > -1) {
             // render selected object a second time in wireframe mode
-            commandBuffer->BindPipeline(selectionRenderPipeline);
+            commandBuffer->BindRenderPipeline(selectionRenderPipeline);
             commandBuffer->SetVertexBuffer(vertexBuffer);
             commandBuffer->SetIndexBuffer(indexBuffer);
             deferredStageUbo.pos = cubePositions[selectedObject - 1];

@@ -246,7 +246,7 @@ struct Cubes : public ExampleFramework {
 				.extent = {nextImgSize.width, nextImgSize.height}
 			});
 
-		commandBuffer->BindPipeline(renderPipeline);
+		commandBuffer->BindRenderPipeline(renderPipeline);
 		commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->BindBuffer(instanceDataBuffer, 2);
 		commandBuffer->SetVertexBuffer(vertexBuffer);
