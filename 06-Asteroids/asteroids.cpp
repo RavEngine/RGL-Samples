@@ -9,6 +9,7 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <random>
+#include <bit>
 #include <tiny_obj_loader.h>
 
 struct objVertex{
