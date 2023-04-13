@@ -5,6 +5,9 @@ jobs:
   build-linux:
     name: Windows Check
     runs-on: windows-latest
+    strategy:
+        matrix:
+            arch: [x64, ARM64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -14,7 +17,7 @@ jobs:
         run: |
             mkdir build
             cd build
-            cmake ..
+            cmake -A${{ matrix.arch }} ..
       - name: Build
         run: |
             cd build
