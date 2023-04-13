@@ -5,18 +5,20 @@
 #include <RGL/Texture.hpp>
 #include <RGL/Sampler.hpp>
 #include <RGL/RenderPass.hpp>
-#include <RGL/../../src/D3D12Texture.hpp>
-#include <RGL/../../src/VkTexture.hpp>
 #include <iostream>
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <random>
 #include <array>
 
+#if RGL_VK_AVAILABLE
 #define XR_USE_GRAPHICS_API_VULKAN
 #include <vulkan/vulkan.h>
+#include <RGL/../../src/VkTexture.hpp>
+#endif
 #if _WIN32
 #define XR_USE_GRAPHICS_API_D3D12
+#include <RGL/../../src/D3D12Texture.hpp>
 #include <d3d12.h>
 #endif
 
@@ -46,8 +48,12 @@ struct Cubes : public ExampleFramework {
 		std::vector<XrView> views;
 
 		union XrSwapchainImage {
+#if RGL_DX12_AVAILABLE
 			XrSwapchainImageD3D12KHR d3d12Image;
+#endif
+#if RGL_VK_AVAILABLE
 			XrSwapchainImageVulkanKHR vkImage;
+#endif
 		};
 
 		// one list of images per eye
@@ -78,8 +84,12 @@ struct Cubes : public ExampleFramework {
 		} cylinder;
 
 		union {
+#if RGL_DX12_AVAILABLE
 			XrGraphicsBindingD3D12KHR d3d12Binding;
+#endif
+#if RGL_VK_AVAILABLE
 			XrGraphicsBindingVulkan2KHR vkBinding;
+#endif
 		} graphicsBinding;
 
 		XrSessionState state = XR_SESSION_STATE_UNKNOWN;
@@ -129,12 +139,16 @@ struct Cubes : public ExampleFramework {
 		bool backendSupported = false;
 		const auto currentAPI = RGL::CurrentAPI();
 		for (uint32_t i = 0; i < ext_count; i++) {
+#if RGL_DX12_AVAILABLE
 			if (currentAPI == RGL::API::Direct3D12 && extMatches(i, XR_KHR_D3D12_ENABLE_EXTENSION_NAME)) {
 				backendSupported = true;
 			}
-			else if (currentAPI == RGL::API::Vulkan && extMatches(i, XR_KHR_VULKAN_ENABLE_EXTENSION_NAME)) {
+#endif
+#if RGL_VK_AVAILABLE
+			if (currentAPI == RGL::API::Vulkan && extMatches(i, XR_KHR_VULKAN_ENABLE_EXTENSION_NAME)) {
 				backendSupported = true;
 			}
+#endif
 			
 			if (extMatches(i, XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME)) {
 				xr.depth.supported = true;
@@ -144,8 +158,20 @@ struct Cubes : public ExampleFramework {
 			Fatal("OpenXR Runtime does not support the selected API");
 		}
 
+		const char* apiStr = nullptr;
+		if (currentAPI == RGL::API::Direct3D12) {
+#if RGL_DX12_AVAILABLE
+			apiStr = XR_KHR_D3D12_ENABLE_EXTENSION_NAME;
+#endif
+		}
+		else {
+#if RGL_VK_AVAILABLE
+			apiStr = XR_KHR_VULKAN_ENABLE_EXTENSION_NAME;
+#endif
+		}
+
 		const char* enabled_exts[] = {
-			currentAPI == RGL::API::Direct3D12 ? XR_KHR_D3D12_ENABLE_EXTENSION_NAME : XR_KHR_VULKAN_ENABLE_EXTENSION_NAME,
+			apiStr,
 			XR_EXT_DEBUG_UTILS_EXTENSION_NAME
 		};
 
@@ -219,6 +245,7 @@ struct Cubes : public ExampleFramework {
 		auto devicedata = device->GetDeviceData();
 		auto queuedata = commandQueue->GetQueueData();
 		if (currentAPI == RGL::API::Direct3D12) {
+#if RGL_DX12_AVAILABLE
 			XrGraphicsRequirementsD3D12KHR d3d12_reqs{
 				.type = XR_TYPE_GRAPHICS_REQUIREMENTS_D3D12_KHR,
 				.next = nullptr
@@ -233,8 +260,10 @@ struct Cubes : public ExampleFramework {
 				.device = devicedata.d3d12Data.device,
 				.queue = queuedata.d3d12Data.commandQueue
 			};
+#endif
 		}
 		else if (currentAPI == RGL::API::Vulkan) {
+#if RGL_VK_AVAILABLE
 			XrGraphicsRequirementsVulkanKHR vk_reqs{
 				.type = XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR,
 				.next = nullptr
@@ -251,6 +280,7 @@ struct Cubes : public ExampleFramework {
 				.queueFamilyIndex = devicedata.vkData.queueFamilyIndex,
 				.queueIndex = devicedata.vkData.queueIndex
 			};
+#endif
 		}
 		
 		// next create the session
@@ -288,8 +318,21 @@ struct Cubes : public ExampleFramework {
 		XR_CHECK(xrEnumerateSwapchainFormats(xr.session, swapchain_format_count, &swapchain_format_count, swapchain_formats.data()));
 
 			// we will use SRGB for now
-		const int preferred_format = currentAPI == RGL::API::Direct3D12 ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : VK_FORMAT_R8G8B8A8_UNORM;
-		const int preferred_depth_format = currentAPI == RGL::API::Direct3D12 ? DXGI_FORMAT_D32_FLOAT : VK_FORMAT_D32_SFLOAT;
+		int preferred_format;
+		int preferred_depth_format;
+		if (currentAPI == RGL::API::Direct3D12) {
+#if RGL_DX12_AVAILABLE
+			preferred_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+			preferred_depth_format = DXGI_FORMAT_D32_FLOAT;
+#endif
+		}
+		else if (currentAPI == RGL::API::Vulkan) {
+#if RGL_VK_AVAILABLE
+			preferred_format = VK_FORMAT_R8G8B8A8_UNORM;
+			preferred_depth_format = VK_FORMAT_D32_SFLOAT;
+#endif
+		}
+
 
 		xr.swapchain_format = swapchain_formats[0];
 		xr.cylinder.format = swapchain_formats[0];
@@ -333,6 +376,7 @@ struct Cubes : public ExampleFramework {
 			// convert to RGL texture objects
 			for (uint32_t j = 0; j < swapchain_length; j++) {
 				auto& img = xr.swapchainImages[i][j];
+#if RGL_DX12_AVAILABLE
 				xr.rglSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
 						.usage = RGL::TextureUsage::ColorAttachment,
 						.aspect = RGL::TextureAspect::HasColor,
@@ -342,6 +386,9 @@ struct Cubes : public ExampleFramework {
 					},
 					device
 				);
+#elif RGL_VK_AVAILABLE
+				Fatal("Vk: not implemented");
+#endif
 			}
 		}
 
@@ -378,6 +425,7 @@ struct Cubes : public ExampleFramework {
 			for (uint32_t j = 0; j < depth_swapchain_length; j++) {
 				auto& img = xr.depthSwapchainImages[i][j];
 				if (currentAPI == RGL::API::Direct3D12) {
+#if RGL_DX12_AVAILABLE
 					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
 						.usage = RGL::TextureUsage::DepthStencilAttachment,
 						.aspect = RGL::TextureAspect::HasDepth,
@@ -387,8 +435,10 @@ struct Cubes : public ExampleFramework {
 						},
 						device
 					);
+#endif
 				}
 				else {
+#if RGL_VK_AVAILABLE
 					VkImageViewCreateInfo createInfo{
 					   .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 					   .image = img.vkImage.image,
@@ -411,6 +461,7 @@ struct Cubes : public ExampleFramework {
 					VkImageView imageView;
 					vkCreateImageView(*(VkDevice*)(devicedata.vkData.device), &createInfo, nullptr, &imageView);
 					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureVk>(imageView, img.vkImage.image, RGL::Dimension{ xr.viewConfigurationViews[i].recommendedImageRectWidth, xr.viewConfigurationViews[i].recommendedImageRectHeight});
+#endif
 				}
 			}
 		}
@@ -503,6 +554,7 @@ struct Cubes : public ExampleFramework {
 			RGL::BufferConfig::Type::VertexBuffer,
 			sizeof(BasicObjects::Cube::Vertex),
 			BasicObjects::Cube::vertices,
+			RGL::BufferAccess::Shared
 			});
 		vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
 
@@ -510,6 +562,7 @@ struct Cubes : public ExampleFramework {
 			RGL::BufferConfig::Type::IndexBuffer,
 			sizeof(BasicObjects::Cube::indices[0]),
 			BasicObjects::Cube::indices,
+			RGL::BufferAccess::Shared
 			});
 		indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
@@ -518,7 +571,7 @@ struct Cubes : public ExampleFramework {
 		// create a pipeline layout
 		// this describes what we *can* bind to the shader
 		RGL::PipelineLayoutDescriptor layoutConfig{
-			.constants = {{ ubo, 0}}
+			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
 
@@ -585,7 +638,6 @@ struct Cubes : public ExampleFramework {
 					.loadOp = RGL::LoadAccessOperation::Clear,
 					.storeOp = RGL::StoreAccessOperation::Store,
 					.clearColor = { 0.4f, 0.6f, 0.9f, 1.0f},
-					.shouldTransition = true		// for swapchain images
 				}
 			},
 			.depthAttachment = RGL::RenderPassConfig::AttachmentDesc{
@@ -651,6 +703,8 @@ struct Cubes : public ExampleFramework {
 			renderPass->SetAttachmentTexture(0, nextimg);
 			renderPass->SetDepthAttachmentTexture(depthTexture);	// we recreated it so we need to reset it
 
+
+			commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 			commandBuffer->BeginRendering(renderPass);
 
 			commandBuffer->SetViewport({
@@ -661,13 +715,14 @@ struct Cubes : public ExampleFramework {
 					.extent = {nextImgSize.width, nextImgSize.height}
 				});
 
-			commandBuffer->BindPipeline(renderPipeline);
+			commandBuffer->BindRenderPipeline(renderPipeline);
 			commandBuffer->SetVertexBytes(ubo, 0);
 			commandBuffer->SetVertexBuffer(vertexBuffer);
 			commandBuffer->SetIndexBuffer(indexBuffer);
 			commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
 
 			commandBuffer->EndRendering();
+			commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 		};
 
 		ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
