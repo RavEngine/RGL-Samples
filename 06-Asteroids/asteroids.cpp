@@ -339,6 +339,9 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->EndCompute();
 
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
+        commandBuffer->SetRenderPipelineBarrier({
+           .buffers = {indirectBuffer}
+        });
         commandBuffer->BeginRendering(renderPass);
 
         commandBuffer->SetViewport({
