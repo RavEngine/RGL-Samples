@@ -36,8 +36,7 @@ struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
     RGLComputePipelinePtr lodPipeline;
     RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer;
-    uint32_t ringStartIndex = 0, asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0,
-    planetNIndicies = 0, ringNIndicies = 0;
+    uint32_t ringStartIndex = 0, planetNIndices = 0, ringNIndices = 0;
         
     RGLCommandBufferPtr commandBuffer;
     RGLTexturePtr depthTexture;
@@ -47,7 +46,7 @@ struct Asteroids : public ExampleFramework {
         glm::mat4 viewProj;
         glm::vec3 pos;
         float timeSinceStart;
-        
+        uint32_t asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0, asteroidTotalIndices;
     } ubo;
     
     const char* SampleName() {
@@ -68,7 +67,7 @@ struct Asteroids : public ExampleFramework {
     void sampleinit(int argc, char** argv) final {
         
         indirectBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(glm::uvec4) * nAsteriods),
+            static_cast<uint32_t>(sizeof(RGL::IndirectInstancedCommand) * nAsteriods),
             RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
             sizeof(glm::uvec4),
             RGL::BufferAccess::Private,
@@ -133,9 +132,9 @@ struct Asteroids : public ExampleFramework {
             tinyobj::LoadObj(&ringAttrib, &ringShapes, &materials, &warn, &err, "ring.obj");
             
             auto planetData = getMeshBuffers(planetShapes[0], planetAttrib);
-            planetNIndicies = planetData.second.size();
+            planetNIndices = planetData.second.size();
             auto ringData = getMeshBuffers(ringShapes[0], ringAttrib);
-            ringNIndicies = ringData.second.size();
+            ringNIndices = ringData.second.size();
             // concatenate ring data into planet data
             ringStartIndex = concatenateBuffers(planetData.first, planetData.second, ringData.first, ringData.second);
             
@@ -165,10 +164,10 @@ struct Asteroids : public ExampleFramework {
             auto asteroidTotal = getMeshBuffers(astroiedLod0shapes[0], astroidLod0Attrib);
             
             auto asteroidNext = getMeshBuffers(astroiedLod1shapes[0],astroidLod1Attrib);
-            asteroidLod1StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
+            ubo.asteroidLod1StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
             
             asteroidNext = getMeshBuffers(astroiedLod2shapes[0],astroidLod2Attrib);
-            asteroidLod2StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
+            ubo.asteroidLod2StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
             
             asteroidVertexBuffer = device->CreateBuffer({
                 static_cast<uint32_t>(sizeof(objVertex) * asteroidTotal.first.size()),
@@ -359,14 +358,14 @@ struct Asteroids : public ExampleFramework {
         // draw the planet
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
-        commandBuffer->DrawIndexed(planetNIndicies);
+        commandBuffer->DrawIndexed(planetNIndices);
         
         // draw ring
         commandBuffer->BindRenderPipeline(ringRenderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
-        commandBuffer->DrawIndexed(ringNIndicies, {
+        commandBuffer->DrawIndexed(ringNIndices, {
             .firstIndex = ringStartIndex
         });
         
@@ -376,9 +375,13 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(asteroidVertexBuffer);
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
-        commandBuffer->DrawIndexed(asteroidLod1StartIndex, {
-            .nInstances = nAsteriods
+        commandBuffer->ExecuteIndirectInstanced({
+            .indirectBuffer = indirectBuffer,
+            .nDraws = nAsteriods,
         });
+        /*commandBuffer->DrawIndexed(ubo.asteroidLod1StartIndex, {
+            .nInstances = nAsteriods
+        });*/
 
         commandBuffer->EndRendering();
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);

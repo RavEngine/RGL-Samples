@@ -1,15 +1,39 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "asteroid_common.glsl"
 
+struct IndirectCommand{
+    uint indexCount;
+    uint instanceCount;
+    uint indexStart;
+    uint baseVertex;
+    uint baseInstance;
+};
+
 layout(std430, binding = 2) buffer asteroidsIndirectBuffer
 {
-    ivec4 indirectBuffer[];
+    IndirectCommand indirectBuffer[];
 };
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 void main(){
-    uint index = gl_GlobalInvocationID.x;
-    if (index < 128){
-        indirectBuffer[index] = ivec4(1,2,3,4);
+    const uint index = gl_GlobalInvocationID.x;
+    if (index >= 128){
+        return;
     }
+
+    vec3 pos = genAsteroidInitialPosition(index);
+
+    IndirectCommand i;
+    i.baseVertex = 0;
+    i.baseInstance = 0;
+    i.instanceCount = 1;
+
+    // decide which LOD to use based on the depth
+    vec4 asteroidCenter = ubo.viewProj * vec4(0,0,0,1);
+    //TODO: calculate depth
+
+    i.indexCount = ubo.asteroidLod1StartIndex;
+    i.indexStart = 0;
+
+    indirectBuffer[index] = i;
 }

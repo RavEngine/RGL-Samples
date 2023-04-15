@@ -3,6 +3,9 @@ layout(push_constant) uniform UniformBufferObject{
     mat4 viewProj;
     vec3 pos;
     float timeSinceStart;
+    uint asteroidLod1StartIndex;
+    uint asteroidLod2StartIndex;
+    uint asteroidTotalIndices;
 } ubo;
 
 float rand(vec2 co){

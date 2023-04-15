@@ -1,3 +1,4 @@
+#version 460
 #extension GL_GOOGLE_include_directive : enable
 #include "asteroid_common.glsl"
 
@@ -13,7 +14,7 @@ layout(location = 1) out vec3 outNormal;
 void main() {
     const uint gridSize = 6;
 
-    vec3 pos = genAsteroidInitialPosition(gl_InstanceID);
+    vec3 pos = genAsteroidInitialPosition(gl_DrawID);
 
     const float scaleFactor = 1;
 
