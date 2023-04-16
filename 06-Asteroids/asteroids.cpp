@@ -46,7 +46,7 @@ struct Asteroids : public ExampleFramework {
         glm::mat4 viewProj;
         glm::vec3 pos;
         float timeSinceStart;
-        uint32_t asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0, asteroidTotalIndices;
+        uint32_t asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0, asteroidTotalIndices = 0;
     } ubo;
     
     const char* SampleName() {
@@ -183,6 +183,8 @@ struct Asteroids : public ExampleFramework {
                 RGL::BufferAccess::Shared
             });
             asteroidIndexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.second.data(),asteroidTotal.second.size() * sizeof(uint32_t)});
+            
+            ubo.asteroidTotalIndices = asteroidTotal.second.size();
         }
         
         createDepthTexture();
@@ -375,7 +377,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(asteroidVertexBuffer);
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
-        commandBuffer->ExecuteIndirectInstanced({
+        commandBuffer->ExecuteIndirectIndexed({
             .indirectBuffer = indirectBuffer,
             .nDraws = nAsteriods,
         });

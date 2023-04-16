@@ -14,7 +14,7 @@ layout(location = 1) out vec3 outNormal;
 void main() {
     const uint gridSize = 6;
 
-    vec3 pos = genAsteroidInitialPosition(gl_DrawID);
+    vec3 pos = genAsteroidInitialPosition(gl_InstanceID);
 
     const float scaleFactor = 1;
 

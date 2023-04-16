@@ -30,10 +30,24 @@ void main(){
 
     // decide which LOD to use based on the depth
     vec4 asteroidCenter = ubo.viewProj * vec4(0,0,0,1);
-    //TODO: calculate depth
-
-    i.indexCount = ubo.asteroidLod1StartIndex;
-    i.indexStart = 0;
+    float depth = asteroidCenter.z / asteroidCenter.w;
+    
+    if (depth < 0.2){
+        // highest detail LOD
+        i.indexCount = ubo.asteroidLod1StartIndex;
+        i.indexStart = 0;
+    }
+    else if (depth > 0.8){
+        // lowest detail LOD
+        i.indexCount = ubo.asteroidTotalIndices - ubo.asteroidLod2StartIndex;
+        i.indexStart = ubo.asteroidLod2StartIndex;
+        
+    }
+    else{
+        // midrange detail LOD
+        i.indexCount = ubo.asteroidLod2StartIndex - ubo.asteroidLod1StartIndex;
+        i.indexStart = ubo.asteroidLod1StartIndex;
+    }
 
     indirectBuffer[index] = i;
 }
