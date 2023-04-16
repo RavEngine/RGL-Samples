@@ -67,7 +67,7 @@ struct Asteroids : public ExampleFramework {
     void sampleinit(int argc, char** argv) final {
         
         indirectBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(RGL::IndirectInstancedCommand) * nAsteriods),
+            static_cast<uint32_t>(sizeof(RGL::IndirectIndexedCommand) * nAsteriods),
             RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
             sizeof(glm::uvec4),
             RGL::BufferAccess::Private,
