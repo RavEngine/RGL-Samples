@@ -25,7 +25,7 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 
-struct Cubes : public ExampleFramework {
+struct XR : public ExampleFramework {
 	struct alignas(16) UniformBufferObject {
 		glm::mat4 viewProj;
 		float timeSinceStart;
@@ -843,4 +843,4 @@ struct Cubes : public ExampleFramework {
 	}
 };
 
-START_SAMPLE(Cubes);
+START_SAMPLE(XR);
