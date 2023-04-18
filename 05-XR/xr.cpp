@@ -686,6 +686,13 @@ struct Cubes : public ExampleFramework {
 			.next = nullptr,
 		};
 		XR_CHECK(xrLocateViews(xr.session, &viewLocateInfo, &viewState, view_count, &view_count, views.data()));
+		
+		RGL::SwapchainPresentConfig presentConfig{
+		};
+
+		swapchain->GetNextImage(&presentConfig.imageIndex);
+		swapchainFence->Wait();
+		swapchainFence->Reset();
 
 		// begin frame
 		XrFrameBeginInfo frameBeginInfo{
@@ -774,13 +781,6 @@ struct Cubes : public ExampleFramework {
 			XR_CHECK(xrReleaseSwapchainImage(xr.depth_swapchains[i], &depth_release_info));
 
 		}
-			
-		RGL::SwapchainPresentConfig presentConfig{
-		};
-
-		swapchain->GetNextImage(&presentConfig.imageIndex);
-		swapchainFence->Wait();
-		swapchainFence->Reset();
 		
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 
