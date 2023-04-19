@@ -704,7 +704,7 @@ struct XR : public ExampleFramework {
 		commandBuffer->Reset();
 		commandBuffer->Begin();
 
-		auto render = [this](RGL::ITexture* nextimg, RGL::ITexture* depthTexture) {
+		auto render = [this](RGL::ITexture* nextimg, RGL::ITexture* depthTexture, glm::mat4 viewProj) {
 
 			auto nextImgSize = nextimg->GetSize();
 			renderPass->SetAttachmentTexture(0, nextimg);
@@ -734,8 +734,9 @@ struct XR : public ExampleFramework {
 
 		ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
 
+		glm::mat4 viewProj{};
 		for (uint32_t i = 0; i < view_count; i++) {
-			// get the swapchain image for both color and depth
+			// get the swapchain image for both color and depth			
 
 			XrSwapchainImageAcquireInfo color_acquire_info{
 				.type = XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO,
@@ -767,7 +768,19 @@ struct XR : public ExampleFramework {
 			xr.projectionViews[i].pose = views[i].pose;
 			xr.projectionViews[i].fov = views[i].fov;
 
-			render(xr.rglSwapchainImages[i][color_acquired_index].get(), xr.rglDepthSwapchainImages[i][depth_acquired_index].get());
+			auto genViewMat = [](const XrPosef& pose) {
+				return glm::inverse(glm::translate(glm::mat4(1), glm::vec3(pose.position.x, pose.position.y, pose.position.z)) * (glm::toMat4(glm::quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z))));
+			};
+
+			auto genProjMat = [this](const XrFovf& fov) {
+				return glm::mat4(glm::perspective(deg_to_rad(fov.angleRight * 2), (float)width / height, nearZ, farZ));
+			};
+
+			// calculate the viewproj matrix
+			const auto& viewState = views[i];
+			viewProj = genProjMat(xr.projectionViews[i].fov) * genViewMat(xr.projectionViews[i].pose);
+
+			render(xr.rglSwapchainImages[i][color_acquired_index].get(), xr.rglDepthSwapchainImages[i][depth_acquired_index].get(), viewProj);
 
 			XrSwapchainImageReleaseInfo release_info{
 				.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
@@ -785,7 +798,8 @@ struct XR : public ExampleFramework {
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 
 		// render the main screen
-		render(nextimg, depthTexture.get());
+		// reuse the last rendered Eye to mirror to the main display
+		render(nextimg, depthTexture.get(), viewProj);
 	
 		commandBuffer->End();
 
