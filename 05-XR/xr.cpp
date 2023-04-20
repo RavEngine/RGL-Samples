@@ -732,9 +732,6 @@ struct XR : public ExampleFramework {
 			commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 		};
 
-		ubo.viewProj = camera.GenerateViewProjMatrix(width, height);
-
-		glm::mat4 viewProj{};
 		for (uint32_t i = 0; i < view_count; i++) {
 			// get the swapchain image for both color and depth			
 
@@ -772,15 +769,15 @@ struct XR : public ExampleFramework {
 				return glm::inverse(glm::translate(glm::mat4(1), glm::vec3(pose.position.x, pose.position.y, pose.position.z)) * (glm::toMat4(glm::quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z))));
 			};
 
-			auto genProjMat = [this](const XrFovf& fov) {
-				return glm::mat4(glm::perspective(deg_to_rad(fov.angleRight * 2), (float)width / height, nearZ, farZ));
+			auto genProjMat = [this](const XrFovf& fov, float width, float height) {
+				return glm::mat4(glm::perspective(fov.angleRight * 2, (float)width / height, nearZ, farZ));
 			};
-
 			// calculate the viewproj matrix
 			const auto& viewState = views[i];
-			viewProj = genProjMat(xr.projectionViews[i].fov) * genViewMat(xr.projectionViews[i].pose);
 
-			render(xr.rglSwapchainImages[i][color_acquired_index].get(), xr.rglDepthSwapchainImages[i][depth_acquired_index].get(), viewProj);
+			ubo.viewProj = genProjMat(xr.projectionViews[i].fov, float(xr.viewConfigurationViews[i].recommendedImageRectWidth), float(xr.viewConfigurationViews[i].recommendedImageRectHeight)) * genViewMat(xr.projectionViews[i].pose);
+
+			render(xr.rglSwapchainImages[i][color_acquired_index].get(), xr.rglDepthSwapchainImages[i][depth_acquired_index].get(), ubo.viewProj);
 
 			XrSwapchainImageReleaseInfo release_info{
 				.type = XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO,
@@ -799,7 +796,7 @@ struct XR : public ExampleFramework {
 
 		// render the main screen
 		// reuse the last rendered Eye to mirror to the main display
-		render(nextimg, depthTexture.get(), viewProj);
+		render(nextimg, depthTexture.get(), ubo.viewProj);
 	
 		commandBuffer->End();
 
