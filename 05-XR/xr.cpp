@@ -109,6 +109,7 @@ struct XR : public ExampleFramework {
 
 	void Fatal(auto str) {
 		OutputDebugStringA(str);
+		SDL_ShowSimpleMessageBox(0, "Fatal Error", str, window);
 		throw std::runtime_error(str);
 	}
 
@@ -155,7 +156,7 @@ struct XR : public ExampleFramework {
 			}
 		}
 		if (!backendSupported) {
-			Fatal("OpenXR Runtime does not support the selected API");
+			Fatal(std::format("OpenXR Runtime does not support the selected API: {}",RGL::APIToString(currentAPI)).c_str());
 		}
 
 		const char* apiStr = nullptr;
