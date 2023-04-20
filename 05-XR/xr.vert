@@ -17,7 +17,7 @@ vec3 vertColors[] = {
 void main() {
     const uint gridSize = 6;
 
-    vec3 pos = vec3(0, 0, 0);
+    vec3 pos = vec3(0, 0, -10);
 
     const float scaleFactor = 1;
 
