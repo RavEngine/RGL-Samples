@@ -35,7 +35,7 @@ constexpr static uint32_t nAsteriods = 128;
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
     RGLComputePipelinePtr lodPipeline;
-    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer;
+    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer, indirectArgumentBuffer;
     uint32_t ringStartIndex = 0, planetNIndices = 0, ringNIndices = 0;
         
     RGLCommandBufferPtr commandBuffer;
@@ -48,6 +48,10 @@ struct Asteroids : public ExampleFramework {
         float timeSinceStart;
         uint32_t asteroidLod1StartIndex = 0, asteroidLod2StartIndex = 0, asteroidTotalIndices = 0;
     } ubo;
+    
+    struct ArgumentBufferEntry{
+        uint32_t drawId;
+    };
     
     const char* SampleName() {
         return "Asteroids";
@@ -69,7 +73,15 @@ struct Asteroids : public ExampleFramework {
         indirectBuffer = device->CreateBuffer({
             static_cast<uint32_t>(sizeof(RGL::IndirectIndexedCommand) * nAsteriods),
             RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
-            sizeof(glm::uvec4),
+            sizeof(RGL::IndirectIndexedCommand),
+            RGL::BufferAccess::Private,
+            RGL::BufferFlags::Writable
+        });
+        
+        indirectArgumentBuffer = device->CreateBuffer({
+            static_cast<uint32_t>(sizeof(ArgumentBufferEntry) * nAsteriods),
+            RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
+            sizeof(ArgumentBufferEntry),
             RGL::BufferAccess::Private,
             RGL::BufferFlags::Writable
         });
@@ -194,7 +206,14 @@ struct Asteroids : public ExampleFramework {
         auto vertexShaderLibrary = GetShader("vertex.vert");
         
         auto renderPipelineLayout = device->CreatePipelineLayout({
-            .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
+            .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}},
+            .bindings = {
+                {
+                    .binding = 2,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Vertex,
+                },
+            }
         });
         
         auto createPipelineDescriptor = [this,&renderPipelineLayout](RGLShaderLibraryPtr vertexShader, RGLShaderLibraryPtr fragmentShader){
@@ -302,6 +321,12 @@ struct Asteroids : public ExampleFramework {
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
                     .writable = true
+                },
+                {
+                    .binding = 3,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
+                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
+                    .writable = true
                 }
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Compute}}
@@ -336,6 +361,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->BeginCompute(lodPipeline);
         commandBuffer->SetComputeBytes(ubo,0);
         commandBuffer->BindComputeBuffer(indirectBuffer, 2);
+        commandBuffer->BindComputeBuffer(indirectArgumentBuffer, 3);
         commandBuffer->DispatchCompute(nAsteriods, 1, 1);
         commandBuffer->EndCompute();
 
@@ -379,6 +405,8 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
         commandBuffer->ExecuteIndirectIndexed({
             .indirectBuffer = indirectBuffer,
+            .argumentBuffer = indirectArgumentBuffer,
+            .argumentBufferBindingPosition = 2,
             .nDraws = nAsteriods,
         });
         /*commandBuffer->DrawIndexed(ubo.asteroidLod1StartIndex, {
@@ -414,6 +442,7 @@ struct Asteroids : public ExampleFramework {
         asteroidVertexBuffer.reset();
         asteroidIndexBuffer.reset();
         indirectBuffer.reset();
+        indirectArgumentBuffer.reset();
 
         planetRenderPipeline.reset();
         asteroidRenderPipeline.reset();

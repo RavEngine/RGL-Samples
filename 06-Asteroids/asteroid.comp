@@ -9,9 +9,15 @@ struct IndirectCommand{
     uint baseInstance;
 };
 
+
 layout(std430, binding = 2) buffer asteroidsIndirectBuffer
 {
     IndirectCommand indirectBuffer[];
+};
+
+layout(std430, binding = 3) buffer asteroidArgumentBuffer
+{
+    ArgumentEntry argumentBuffer[];
 };
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -50,4 +56,5 @@ void main(){
     }
 
     indirectBuffer[index] = i;
+    argumentBuffer[index] = ArgumentEntry(index);
 }
