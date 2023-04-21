@@ -206,14 +206,14 @@ struct Asteroids : public ExampleFramework {
         auto vertexShaderLibrary = GetShader("vertex.vert");
         
         auto renderPipelineLayout = device->CreatePipelineLayout({
-            .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}},
-            .bindings = {
+           .bindings = {
                 {
                     .binding = 2,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Vertex,
                 },
-            }
+            },
+            .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}},
         });
         
         auto createPipelineDescriptor = [this,&renderPipelineLayout](RGLShaderLibraryPtr vertexShader, RGLShaderLibraryPtr fragmentShader){
