@@ -35,7 +35,7 @@ constexpr static uint32_t nAsteriods = 1024;
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
     RGLComputePipelinePtr lodPipeline;
-    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer, indirectArgumentBuffer;
+    RGLBufferPtr planetVertexBuffer, planetIndexBuffer, asteroidVertexBuffer, asteroidIndexBuffer, indirectBuffer;
     uint32_t ringStartIndex = 0, planetNIndices = 0, ringNIndices = 0;
         
     RGLCommandBufferPtr commandBuffer;
@@ -78,14 +78,6 @@ struct Asteroids : public ExampleFramework {
             RGL::BufferFlags::Writable
         });
         
-        indirectArgumentBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(ArgumentBufferEntry) * nAsteriods),
-            RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
-            sizeof(ArgumentBufferEntry),
-            RGL::BufferAccess::Private,
-            RGL::BufferFlags::Writable
-        });
-     
 #pragma mark Load Meshes
         auto getMeshBuffers = [](const tinyobj::shape_t& meshShape, const tinyobj::attrib_t& meshAttrib){
             uint32_t totalIndices = 0;
@@ -206,13 +198,6 @@ struct Asteroids : public ExampleFramework {
         auto vertexShaderLibrary = GetShader("vertex.vert");
         
         auto renderPipelineLayout = device->CreatePipelineLayout({
-           .bindings = {
-                {
-                    .binding = 2,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Vertex,
-                },
-            },
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}},
         });
         
@@ -322,12 +307,6 @@ struct Asteroids : public ExampleFramework {
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
                     .writable = true
                 },
-                {
-                    .binding = 3,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
-                    .writable = true
-                }
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Compute}}
         });
@@ -362,7 +341,6 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->BeginCompute(lodPipeline);
         commandBuffer->SetComputeBytes(ubo,0);
         commandBuffer->BindComputeBuffer(indirectBuffer, 2);
-        commandBuffer->BindComputeBuffer(indirectArgumentBuffer, 3);
         commandBuffer->DispatchCompute(nAsteriods, 1, 1);
         commandBuffer->EndCompute();
 
@@ -407,8 +385,6 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
         commandBuffer->ExecuteIndirectIndexed({
             .indirectBuffer = indirectBuffer,
-            .argumentBuffer = indirectArgumentBuffer,
-            .argumentBufferBindingPosition = 2,
             .nDraws = nAsteriods,
         });
         /*commandBuffer->DrawIndexed(ubo.asteroidLod1StartIndex, {
@@ -444,7 +420,6 @@ struct Asteroids : public ExampleFramework {
         asteroidVertexBuffer.reset();
         asteroidIndexBuffer.reset();
         indirectBuffer.reset();
-        indirectArgumentBuffer.reset();
 
         planetRenderPipeline.reset();
         asteroidRenderPipeline.reset();

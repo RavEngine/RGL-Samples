@@ -15,10 +15,6 @@ layout(std430, binding = 2) buffer asteroidsIndirectBuffer
     IndirectCommand indirectBuffer[];
 };
 
-layout(std430, binding = 3) buffer asteroidArgumentBuffer
-{
-    ArgumentEntry argumentBuffer[];
-};
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 void main(){
@@ -31,7 +27,7 @@ void main(){
 
     IndirectCommand i;
     i.baseVertex = 0;
-    i.baseInstance = 0;
+    i.baseInstance = index;
     i.instanceCount = 1;
 
     // decide which LOD to use based on the depth
@@ -56,5 +52,4 @@ void main(){
     }
 
     indirectBuffer[index] = i;
-    argumentBuffer[index] = ArgumentEntry(index);
 }

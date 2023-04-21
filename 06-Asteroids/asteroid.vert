@@ -10,15 +10,11 @@ layout(location = 2) in vec2 inUV;
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
 
-layout(std430, binding = 2) buffer asteroidsArgumentBuffer
-{
-    ArgumentEntry argumentBuffer[];
-};
 
 void main() {
     const uint gridSize = 6;
 
-    uint id = argumentBuffer[0].drawId;
+    uint id = gl_BaseInstance;
     vec3 pos = genAsteroidInitialPosition(id);
 
     const float scaleFactor = 1;
