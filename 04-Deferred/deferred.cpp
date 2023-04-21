@@ -9,8 +9,6 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 #include <random>
-#undef CreateSemaphore
-#undef LoadImage
 
 static glm::vec3 cubePositions[]{
     {0,0,0},
@@ -51,6 +49,7 @@ struct Deferred : public ExampleFramework {
     const char* SampleName() {
         return "Deferred";
     }
+
     void updateGBuffers()
     {
         swapchainFence->Wait();
@@ -599,6 +598,7 @@ struct Deferred : public ExampleFramework {
 
         swapchain->GetNextImage(&presentConfig.imageIndex);
         swapchainFence->Wait();
+
         swapchainFence->Reset();
         commandBuffer->Reset();
         commandBuffer->Begin();
@@ -700,6 +700,8 @@ struct Deferred : public ExampleFramework {
     void onresize(int width, int height) final {
         updateGBuffers();
         deferredRenderPass->SetDepthAttachmentTexture(depthTexture.get());    // we recreated it so we need to reset it
+        finalRenderPass->SetDepthAttachmentTexture(depthTexture.get());
+        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture.get());
         deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
         deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
         deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
