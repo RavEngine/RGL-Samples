@@ -30,7 +30,7 @@ namespace std{
     };
 }
 
-constexpr static uint32_t nAsteriods = 128;
+constexpr static uint32_t nAsteriods = 1024;
 
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
@@ -339,7 +339,8 @@ struct Asteroids : public ExampleFramework {
             .pipelineLayout = lodPipelineLayout
         });
         
-        camera.position.z = 10;
+        camera.position.z = 50;
+        camera.farClip = 1000;
     }
     void tick() final {
         ubo.viewProj = camera.GenerateViewProjMatrix(width, height);

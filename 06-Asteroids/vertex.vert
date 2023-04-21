@@ -22,7 +22,7 @@ void main() {
 
     vec3 pos = ubo.pos;
 
-    const float scaleFactor = 1;
+    const float scaleFactor = 10;
 
     float spinSpeed = 1.0;
 
@@ -32,11 +32,18 @@ void main() {
         vec4(0.0, 0.0, scaleFactor, 0.0),
         vec4(pos, 1.0)
     );
+    
+    const float angle = radians(-10);
+    mat4 rotmatx = mat4(
+        vec4(1, 0, 0, 0),
+        vec4(0, cos(angle), -sin(angle), 0),
+        vec4(0, sin(angle), cos(angle), 0),
+        vec4(0, 0, 0, 1.0)
+    );
 
+    mat4 finalmat = model * rotmatx;
 
-    mat4 finalmat = model;
-
-    mat3 normalmat = transpose(mat3(finalmat));
+    mat3 normalmat = mat3(finalmat);
 
     
     vec4 worldpos = finalmat * vec4(inPosition,1);

@@ -32,9 +32,24 @@ void main() {
         vec4(pos, 1.0)
     );
     
-    mat4 finalmat = model;
+    float angle = ubo.timeSinceStart * rand(vec2(id,id));
+    mat4 rotmatx = mat4(
+        vec4(1, 0, 0, 0),
+        vec4(0, cos(angle), -sin(angle), 0),
+        vec4(0, sin(angle), cos(angle), 0),
+        vec4(0, 0, 0, 1.0)
+    );
+    
+    mat4 rotmatz = mat4(
+       vec4(cos(angle), -sin(angle), 0, 0),
+       vec4(sin(angle), cos(angle), 0, 0),
+       vec4(0, 0, 0, 0),
+       vec4(0, 0, 0, 1)
+   );
+    
+    mat4 finalmat = (model * rotmatx);
 
-    mat3 normalmat = transpose(mat3(finalmat));
+    mat3 normalmat = mat3(finalmat);
 
     vec4 worldpos = finalmat * vec4(inPosition,1);
     

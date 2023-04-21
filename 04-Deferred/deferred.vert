@@ -55,7 +55,7 @@ void main() {
 
     mat4 finalmat = model * rotmatx;
 
-    mat3 normalmat = transpose(mat3(finalmat));
+    mat3 normalmat = mat3(finalmat);
 
     
     vec4 worldpos = finalmat * vec4(inPosition,1);
