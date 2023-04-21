@@ -385,6 +385,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetVertexBytes(ubo, 0);
         
         // draw the planet
+        commandBuffer->SetFragmentBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(planetVertexBuffer);
         commandBuffer->SetIndexBuffer(planetIndexBuffer);
         commandBuffer->DrawIndexed(planetNIndices);
