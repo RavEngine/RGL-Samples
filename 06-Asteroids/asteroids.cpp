@@ -271,7 +271,11 @@ struct Asteroids : public ExampleFramework {
 
         // create a render pipeline
         planetRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("planet.frag")));
-        ringRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(vertexShaderLibrary, GetShader("ring.frag")));
+        {
+            auto desc = createPipelineDescriptor(vertexShaderLibrary, GetShader("ring.frag"));
+            desc.rasterizerConfig.cullMode = RGL::CullMode::None;   // we want to draw both sides here
+            ringRenderPipeline = device->CreateRenderPipeline(desc);
+        }
         asteroidRenderPipeline = device->CreateRenderPipeline(createPipelineDescriptor(GetShader("asteroid.vert"), GetShader("asteroid.frag")));
         
         renderPass = RGL::CreateRenderPass({
