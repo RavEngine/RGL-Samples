@@ -198,7 +198,7 @@ struct Asteroids : public ExampleFramework {
         auto vertexShaderLibrary = GetShader("vertex.vert");
         
         auto renderPipelineLayout = device->CreatePipelineLayout({
-            .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}},
+            .constants = {{ ubo, 0, RGL::StageVisibility{RGL::StageVisibility::Vertex | RGL::StageVisibility::Fragment}}},
         });
         
         auto createPipelineDescriptor = [this,&renderPipelineLayout](RGLShaderLibraryPtr vertexShader, RGLShaderLibraryPtr fragmentShader){
