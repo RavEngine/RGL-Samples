@@ -12,8 +12,21 @@ struct ArgumentEntry{
     uint drawId;
 };
 
-float rand(vec2 co){
-  return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+#define PI 3.1415926538
+
+float rand(in vec2 ip) {
+    const float seed = 12345678;
+    uvec2 p = uvec2(floatBitsToUint(ip.x), floatBitsToUint(ip.y));
+    uint s = floatBitsToUint(seed);
+    s ^= (s ^ ((~p.x << s) + (~p.y << s)));
+    
+    p ^= (p << 17U);
+    p ^= ((p ^ s) >> 13U);
+    p ^= (p << 5U);
+    p ^= ((s + (s&(p.x^p.y))) >> 3U);
+    
+    uint n = (p.x*s+p.y)+((p.x ^ p.y) << ~p.x ^ s) + ((p.x ^ p.y) << ~p.y ^ s);
+    return float(n*50323U) / float(0xFFFFFFFFU);
 }
 
 vec3 calcBaseLighting(vec3 inNormal){
@@ -29,14 +42,23 @@ vec3 calcBaseLighting(vec3 inNormal){
     return (intensity * diffuse) + ambientlight;
 }
 
-vec3 genAsteroidInitialPosition(uint pos){
-    const float maxScale = 100;
-    vec3 randDir = vec3(
-                rand(vec2(pos,-int(pos))),
-                rand(vec2(-int(pos),pos)),
-                rand(vec2(-int(pos),-int(pos)))
+vec3 polar2cartesian(float xangle, float zangle){
+    return vec3(
+                sin(zangle) * cos(xangle),
+                sin(zangle) * sin(xangle),
+                cos(zangle)
                 );
-    randDir = normalize(randDir);
+}
 
-    return (randDir * rand(vec2(randDir.x,randDir.y))) * maxScale;
+vec3 genAsteroidInitialPosition(uint pos){
+    const float maxDist = 100;
+    const float minDist = 20;
+    
+    vec3 randDir = polar2cartesian(rand(vec2(pos,-int(pos))) * 2*PI, rand(vec2(pos+1,-int(pos))) * 2 * PI);
+    
+    randDir = normalize(randDir);
+    
+    float randDistance = mix(minDist, maxDist, rand(vec2(randDir.x,randDir.y)));
+
+    return randDir * randDistance;
 }

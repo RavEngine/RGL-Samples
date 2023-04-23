@@ -2,14 +2,12 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "asteroid_common.glsl"
 
-
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
 
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
-
 
 void main() {
     const uint gridSize = 6;
