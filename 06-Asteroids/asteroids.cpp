@@ -1,4 +1,5 @@
 #include "Common/ExampleFramework.hpp"
+#include "shared.h"
 #include <RGL/Pipeline.hpp>
 #include <RGL/Buffer.hpp>
 #include <RGL/CommandBuffer.hpp>
@@ -29,8 +30,6 @@ namespace std{
         }
     };
 }
-
-constexpr static uint32_t nAsteriods = 1024;
 
 struct Asteroids : public ExampleFramework {
     RGLRenderPipelinePtr planetRenderPipeline, ringRenderPipeline, asteroidRenderPipeline;
@@ -71,7 +70,7 @@ struct Asteroids : public ExampleFramework {
     void sampleinit(int argc, char** argv) final {
         
         indirectBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(RGL::IndirectIndexedCommand) * nAsteriods),
+            static_cast<uint32_t>(sizeof(RGL::IndirectIndexedCommand) * nAsteroids),
             RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
             sizeof(RGL::IndirectIndexedCommand),
             RGL::BufferAccess::Private,
@@ -345,7 +344,7 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->BeginCompute(lodPipeline);
         commandBuffer->SetComputeBytes(ubo,0);
         commandBuffer->BindComputeBuffer(indirectBuffer, 2);
-        commandBuffer->DispatchCompute(nAsteriods, 1, 1);
+        commandBuffer->DispatchCompute(nAsteroids, 1, 1);
         commandBuffer->EndCompute();
 
         commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
@@ -389,10 +388,10 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->SetIndexBuffer(asteroidIndexBuffer);
         commandBuffer->ExecuteIndirectIndexed({
             .indirectBuffer = indirectBuffer,
-            .nDraws = nAsteriods,
+            .nDraws = nAsteroids,
         });
         /*commandBuffer->DrawIndexed(ubo.asteroidLod1StartIndex, {
-            .nInstances = nAsteriods
+            .nInstances = nAsteroids
         });*/
 
         commandBuffer->EndRendering();
