@@ -37,8 +37,8 @@ struct Cubes : public ExampleFramework {
 	{
 		// create the depth buffer
 		depthTexture = device->CreateTexture({
-			.usage = RGL::TextureUsage::DepthStencilAttachment,
-			.aspect = RGL::TextureAspect::HasDepth,
+			.usage = {.DepthStencilAttachment = true},
+			.aspect = {.HasDepth = true},
 			.width = (uint32_t)width,
 			.height = (uint32_t)height,
 			.format = RGL::TextureFormat::D32SFloat
@@ -51,7 +51,7 @@ struct Cubes : public ExampleFramework {
         auto fragmentShaderLibrary = GetShader("cubes.frag");
         
 		vertexBuffer = device->CreateBuffer({
-			RGL::BufferConfig::Type::VertexBuffer,
+			{.VertexBuffer = true},
 			sizeof(BasicObjects::Cube::Vertex),
             BasicObjects::Cube::vertices,
 			RGL::BufferAccess::Shared
@@ -67,7 +67,7 @@ struct Cubes : public ExampleFramework {
         }
         
         instanceDataBuffer = device->CreateBuffer({
-           RGL::BufferConfig::Type::StorageBuffer,
+			{.StorageBuffer = true},
             sizeof(decltype(cubeSpinSpeeds[0])),
             cubeSpinSpeeds,
 			RGL::BufferAccess::Shared
@@ -76,7 +76,7 @@ struct Cubes : public ExampleFramework {
         
         
         indexBuffer = device->CreateBuffer({
-            RGL::BufferConfig::Type::IndexBuffer,
+			{.IndexBuffer = true},
             sizeof(BasicObjects::Cube::indices[0]),
             BasicObjects::Cube::indices,
 			RGL::BufferAccess::Shared
@@ -86,8 +86,8 @@ struct Cubes : public ExampleFramework {
 		auto imagedata = LoadImage("tx1.png");
 
 		sampledTexture = device->CreateTextureWithData(RGL::TextureConfig{ 
-			.usage = (RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferDestination),
-			.aspect = RGL::TextureAspect::HasColor,
+			.usage = {.TransferDestination = true, .Sampled = true},
+			.aspect = {.HasColor = true},
 			.width = imagedata.width, 
 			.height = imagedata.height, 
 			.format = RGL::TextureFormat::RGBA8_Unorm

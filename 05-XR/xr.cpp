@@ -379,8 +379,8 @@ struct XR : public ExampleFramework {
 				auto& img = xr.swapchainImages[i][j];
 #if RGL_DX12_AVAILABLE
 				xr.rglSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
-						.usage = RGL::TextureUsage::ColorAttachment,
-						.aspect = RGL::TextureAspect::HasColor,
+						.usage = {.ColorAttachment = true},
+						.aspect = {.HasColor = true},
 						.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
 						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
 						.format = RGL::TextureFormat::BGRA8_Unorm,
@@ -428,8 +428,8 @@ struct XR : public ExampleFramework {
 				if (currentAPI == RGL::API::Direct3D12) {
 #if RGL_DX12_AVAILABLE
 					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureD3D12>(ComPtr<ID3D12Resource>(img.d3d12Image.texture), RGL::TextureConfig{
-						.usage = RGL::TextureUsage::DepthStencilAttachment,
-						.aspect = RGL::TextureAspect::HasDepth,
+						.usage = {.DepthStencilAttachment = true},
+						.aspect = {.HasDepth = true},
 						.width = xr.viewConfigurationViews[i].recommendedImageRectWidth,
 						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
 						.format = RGL::TextureFormat::D32SFloat
@@ -536,8 +536,8 @@ struct XR : public ExampleFramework {
 	{
 		// create the depth buffer
 		depthTexture = device->CreateTexture({
-			.usage = RGL::TextureUsage::DepthStencilAttachment,
-			.aspect = RGL::TextureAspect::HasDepth,
+			.usage = {.DepthStencilAttachment = true},
+			.aspect = {.HasDepth = true},
 			.width = (uint32_t)width,
 			.height = (uint32_t)height,
 			.format = RGL::TextureFormat::D32SFloat
@@ -552,7 +552,7 @@ struct XR : public ExampleFramework {
 		auto fragmentShaderLibrary = GetShader("xr.frag");
 
 		vertexBuffer = device->CreateBuffer({
-			RGL::BufferConfig::Type::VertexBuffer,
+			{.VertexBuffer = true},
 			sizeof(BasicObjects::Cube::Vertex),
 			BasicObjects::Cube::vertices,
 			RGL::BufferAccess::Shared
@@ -560,7 +560,7 @@ struct XR : public ExampleFramework {
 		vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
 
 		indexBuffer = device->CreateBuffer({
-			RGL::BufferConfig::Type::IndexBuffer,
+			{.IndexBuffer = true},
 			sizeof(BasicObjects::Cube::indices[0]),
 			BasicObjects::Cube::indices,
 			RGL::BufferAccess::Shared

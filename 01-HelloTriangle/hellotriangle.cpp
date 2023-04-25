@@ -130,7 +130,7 @@ struct HelloWorld : public AppBase {
 #endif
 
 		vertexBuffer = device->CreateBuffer({
-			RGL::BufferConfig::Type::VertexBuffer,
+			{.VertexBuffer = true},
 			sizeof(Vertex),
 			vertices,
 			RGL::BufferAccess::Shared

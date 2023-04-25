@@ -55,8 +55,8 @@ struct Deferred : public ExampleFramework {
         swapchainFence->Wait();
         // create the depth buffer
         depthTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::DepthStencilAttachment,
-            .aspect = RGL::TextureAspect::HasDepth,
+            .usage = {.DepthStencilAttachment = true},
+            .aspect = {.HasDepth = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = RGL::TextureFormat::D32SFloat,
@@ -64,8 +64,8 @@ struct Deferred : public ExampleFramework {
             }
         );
         colorTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
-            .aspect = RGL::TextureAspect::HasColor,
+            .usage = {.Sampled = true, .ColorAttachment = true },
+            .aspect = {.HasColor = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = colorTexFormat,
@@ -74,8 +74,8 @@ struct Deferred : public ExampleFramework {
             }
         );
         normalTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
-            .aspect = RGL::TextureAspect::HasColor,
+            .usage = {.Sampled = true, .ColorAttachment = true },
+            .aspect = {.HasColor = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = normalTexFormat,
@@ -84,8 +84,8 @@ struct Deferred : public ExampleFramework {
             }
         );
         positionTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
-            .aspect = RGL::TextureAspect::HasColor,
+            .usage = {.Sampled = true, .ColorAttachment = true },
+            .aspect = {.HasColor = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = posTexFormat,
@@ -94,8 +94,8 @@ struct Deferred : public ExampleFramework {
             }
         );
         lightingTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled,
-            .aspect = RGL::TextureAspect::HasColor,
+            .usage = {.Sampled = true, .ColorAttachment = true },
+            .aspect = {.HasColor = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = colorTexFormat,
@@ -105,8 +105,8 @@ struct Deferred : public ExampleFramework {
         );
 
         idTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::ColorAttachment | RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferSource,
-            .aspect = RGL::TextureAspect::HasColor,
+            .usage = {.TransferSource = true, .Sampled = true, .ColorAttachment = true },
+            .aspect = {.HasColor = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = idTexFormat,
@@ -141,7 +141,7 @@ struct Deferred : public ExampleFramework {
         auto wireframeFragmentShader = GetShader("selection.frag");
         
         vertexBuffer = device->CreateBuffer({
-            RGL::BufferConfig::Type::VertexBuffer,
+            {.VertexBuffer = true},
             sizeof(BasicObjects::Cube::Vertex),
             BasicObjects::Cube::vertices,
             RGL::BufferAccess::Shared
@@ -149,7 +149,7 @@ struct Deferred : public ExampleFramework {
         vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
         
         screenTriVerts = device->CreateBuffer({
-            RGL::BufferConfig::Type::VertexBuffer,
+            {.VertexBuffer = true},
             sizeof(BasicObjects::ScreenTriangle::Vertex),
             BasicObjects::ScreenTriangle::vertices,
             RGL::BufferAccess::Shared
@@ -157,7 +157,7 @@ struct Deferred : public ExampleFramework {
         screenTriVerts->SetBufferData(BasicObjects::ScreenTriangle::vertices);
         
         indexBuffer = device->CreateBuffer({
-            RGL::BufferConfig::Type::IndexBuffer,
+            {.IndexBuffer = true},
             sizeof(BasicObjects::Cube::indices[0]),
             BasicObjects::Cube::indices,
             RGL::BufferAccess::Shared
@@ -165,11 +165,11 @@ struct Deferred : public ExampleFramework {
         indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
         imageDownloadBuffer = device->CreateBuffer({
-            RGL::BufferConfig::Type::StorageBuffer,
-            sizeof(uint32_t) * 4,
+            {.StorageBuffer = true},
+            4,
             sizeof(uint32_t),
             RGL::BufferAccess::Shared,
-            RGL::BufferFlags::TransferDestination
+            {.TransferDestination = true}
          });
         imageDownloadBuffer->MapMemory();
 

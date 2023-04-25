@@ -38,8 +38,8 @@ struct ImGuiDemo : public ExampleFramework {
 	{
 		// create the depth buffer
 		depthTexture = device->CreateTexture({
-			.usage = RGL::TextureUsage::DepthStencilAttachment,
-			.aspect = RGL::TextureAspect::HasDepth,
+			.usage = {.DepthStencilAttachment = true},
+			.aspect = {.HasDepth = true},
 			.width = (uint32_t)width,
 			.height = (uint32_t)height,
 			.format = RGL::TextureFormat::D32SFloat
@@ -209,8 +209,8 @@ void main(){
 		int width, height;
 		imgui_io->Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 		fontsTexture = device->CreateTextureWithData(RGL::TextureConfig{
-			.usage = (RGL::TextureUsage::Sampled | RGL::TextureUsage::TransferDestination),
-			.aspect = RGL::TextureAspect::HasColor,
+			.usage = {.TransferDestination = true, .Sampled = true},
+			.aspect = {.HasColor = true},
 			.width = static_cast<uint32_t>(width),
 			.height = static_cast<uint32_t>(height),
 			.format = RGL::TextureFormat::RGBA8_Unorm,
@@ -227,7 +227,7 @@ void main(){
         if (!vertexBuffer || vertexBuffer->getBufferSize() < vertBufLen){
             vertexBuffer = device->CreateBuffer({
                 vertBufLen,
-                RGL::BufferConfig::Type::VertexBuffer,
+				{.VertexBuffer = true},
                 sizeof(ImDrawVert),
 				RGL::BufferAccess::Shared
             });
@@ -235,7 +235,7 @@ void main(){
         if (!indexBuffer || indexBuffer->getBufferSize() < indBufLen){
             indexBuffer = device->CreateBuffer({
                 vertBufLen,
-                RGL::BufferConfig::Type::IndexBuffer,
+				{.IndexBuffer = true},
                 sizeof(ImDrawIdx),
 				RGL::BufferAccess::Shared
             });

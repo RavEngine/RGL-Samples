@@ -59,8 +59,8 @@ struct Asteroids : public ExampleFramework {
     {
         // create the depth buffer
         depthTexture = device->CreateTexture({
-            .usage = RGL::TextureUsage::DepthStencilAttachment,
-            .aspect = RGL::TextureAspect::HasDepth,
+            .usage = {.DepthStencilAttachment = true},
+            .aspect = {.HasDepth = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
             .format = RGL::TextureFormat::D32SFloat
@@ -70,19 +70,19 @@ struct Asteroids : public ExampleFramework {
     void sampleinit(int argc, char** argv) final {
         
         indirectBuffer = device->CreateBuffer({
-            static_cast<uint32_t>(sizeof(RGL::IndirectIndexedCommand) * nAsteroids),
-            RGL::BufferConfig::Type::IndirectBuffer | RGL::BufferConfig::Type::StorageBuffer,
+            nAsteroids,
+            {.StorageBuffer = true, .IndirectBuffer = true},
             sizeof(RGL::IndirectIndexedCommand),
             RGL::BufferAccess::Private,
-            RGL::BufferFlags::Writable
+            {.Writable = true}
         });
 
         perInstanceAttributeBuffer = device->CreateBuffer({
-           static_cast<uint32_t>(sizeof(uint32_t) * nAsteroids),
-           RGL::BufferConfig::Type::VertexBuffer | RGL::BufferConfig::Type::StorageBuffer,
+           nAsteroids,
+            {.StorageBuffer = true, .VertexBuffer = true},
            sizeof(uint32_t),
            RGL::BufferAccess::Private,
-           RGL::BufferFlags::Writable
+            {.Writable = true}
         });
         
 #pragma mark Load Meshes
@@ -150,15 +150,15 @@ struct Asteroids : public ExampleFramework {
             ringStartIndex = concatenateBuffers(planetData.first, planetData.second, ringData.first, ringData.second);
             
             planetVertexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(objVertex) * planetData.first.size()),
-                RGL::BufferConfig::Type::VertexBuffer,
+                uint32_t(planetData.first.size()),
+                {.VertexBuffer = true},
                 sizeof(objVertex),
                 RGL::BufferAccess::Shared
             });
             planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size() * sizeof(objVertex)});
             planetIndexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(uint32_t) * planetData.second.size()),
-                RGL::BufferConfig::Type::IndexBuffer,
+                uint32_t(planetData.second.size()),
+                {.IndexBuffer = true},
                 sizeof(uint32_t),
                 RGL::BufferAccess::Shared
             });
@@ -181,15 +181,15 @@ struct Asteroids : public ExampleFramework {
             ubo.asteroidLod2StartIndex = concatenateBuffers(asteroidTotal.first, asteroidTotal.second, asteroidNext.first, asteroidNext.second);
             
             asteroidVertexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(objVertex) * asteroidTotal.first.size()),
-                RGL::BufferConfig::Type::VertexBuffer,
+                uint32_t(asteroidTotal.first.size()),
+                {.VertexBuffer = true},
                 sizeof(objVertex),
                 RGL::BufferAccess::Shared
             });
             asteroidVertexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.first.data(),asteroidTotal.first.size() * sizeof(objVertex)});
             asteroidIndexBuffer = device->CreateBuffer({
-                static_cast<uint32_t>(sizeof(uint32_t) * asteroidTotal.second.size()),
-                RGL::BufferConfig::Type::IndexBuffer,
+                uint32_t(asteroidTotal.second.size()),
+                {.IndexBuffer = true},
                 sizeof(uint32_t),
                 RGL::BufferAccess::Shared
             });
