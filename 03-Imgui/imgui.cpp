@@ -123,10 +123,10 @@ void main(){
                 }
             },
             .vertexConfig = {
-                .vertexBindinDesc = {
-                    .binding = 0,
-                    .stride = sizeof(ImDrawVert),
-                },
+				.vertexBindings = {{
+					.binding = 0,
+					.stride = sizeof(ImDrawVert),
+				}},
                 .attributeDescs = {
                     {
                         .location = 0,
@@ -364,7 +364,7 @@ void main(){
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);
-                    commandBuffer->SetVertexBuffer(vertexBuffer, vertexBufferOffset + pcmd->VtxOffset);
+					commandBuffer->SetVertexBuffer(vertexBuffer, { .offsetIntoBuffer = uint32_t(vertexBufferOffset + pcmd->VtxOffset) });
 					commandBuffer->SetIndexBuffer(indexBuffer);
 					commandBuffer->DrawIndexed(pcmd->ElemCount, {
 						.firstIndex = static_cast<uint32_t>(indexBufferOffset + pcmd->IdxOffset)

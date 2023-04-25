@@ -15,6 +15,11 @@ layout(std430, binding = 2) buffer asteroidsIndirectBuffer
     IndirectCommand indirectBuffer[];
 };
 
+layout(std430, binding = 3) buffer asteroidPerInstanceAttributeBuffer
+{
+    uint perInstanceAttributeBuffer[];
+};
+
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 void main(){
     const uint index = gl_GlobalInvocationID.x;
@@ -51,4 +56,5 @@ void main(){
     }
 
     indirectBuffer[index] = i;
+    perInstanceAttributeBuffer[index] = index;
 }

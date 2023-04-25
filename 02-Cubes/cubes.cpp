@@ -139,10 +139,10 @@ struct Cubes : public ExampleFramework {
                 }
             },
             .vertexConfig = {
-                .vertexBindinDesc = {
-                    .binding = 0,
-                    .stride = sizeof(BasicObjects::Cube::Vertex),
-                },
+				.vertexBindings = {{
+					.binding = 0,
+					.stride = sizeof(BasicObjects::Cube::Vertex),
+				}},
                 .attributeDescs = {
                     {
                         .location = 0,

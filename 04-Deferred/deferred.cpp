@@ -271,10 +271,10 @@ struct Deferred : public ExampleFramework {
                 }
             },
                 .vertexConfig = {
-                    .vertexBindinDesc = {
+                    .vertexBindings = {{
                         .binding = 0,
                         .stride = sizeof(BasicObjects::Cube::Vertex),
-                    },
+                    }},
                     .attributeDescs = {
                         {
                             .location = 0,
@@ -346,10 +346,10 @@ struct Deferred : public ExampleFramework {
                 }
             },
                 .vertexConfig = {
-                    .vertexBindinDesc = {
+                    .vertexBindings = {{
                         .binding = 0,
                         .stride = sizeof(BasicObjects::ScreenTriangle::Vertex),
-                    },
+                    }},
                         .attributeDescs = {
                             {
                                 .location = 0,
@@ -400,10 +400,10 @@ struct Deferred : public ExampleFramework {
                 }
             },
                 .vertexConfig = {
-                    .vertexBindinDesc = {
+                    .vertexBindings = {{
                         .binding = 0,
                         .stride = sizeof(BasicObjects::Cube::Vertex),
-                    },
+                    }},
                     .attributeDescs = {
                         {
                             .location = 0,
@@ -467,10 +467,10 @@ struct Deferred : public ExampleFramework {
                 }
             },
                 .vertexConfig = {
-                    .vertexBindinDesc = {
+                    .vertexBindings = {{
                         .binding = 0,
                         .stride = sizeof(BasicObjects::ScreenTriangle::Vertex),
-                    },
+                    }},
                         .attributeDescs = {
                             {
                                 .location = 0,

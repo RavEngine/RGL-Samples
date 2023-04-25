@@ -156,10 +156,10 @@ struct HelloWorld : public AppBase {
                 }
             },
             .vertexConfig = {
-                .vertexBindinDesc = {
-                    .binding = 0,
-                    .stride = sizeof(Vertex),
-                },
+				.vertexBindings = {{
+					.binding = 0,
+					.stride = sizeof(Vertex),
+				}},
                 .attributeDescs = {
                     {
                         .location = 0,

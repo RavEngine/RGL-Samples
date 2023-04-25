@@ -5,6 +5,7 @@
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV;
+layout(location = 3) in uint inInstanceID;
 
 layout(location = 0) out vec2 outUV;
 layout(location = 1) out vec3 outNormal;
@@ -12,7 +13,7 @@ layout(location = 1) out vec3 outNormal;
 void main() {
     const uint gridSize = 6;
 
-    uint id = gl_BaseInstance;
+    uint id = inInstanceID;
     vec3 pos = genAsteroidInitialPosition(id);
 
     const float scaleFactor = 1;
