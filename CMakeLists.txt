@@ -263,7 +263,7 @@ add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
-if (NOT APPLE)				# OpenXR is not supported on Apple platforms
+if (MSVC)				# OpenXR only on windows fornow
 	add_sample(05-XR)
 	target_link_libraries(05-XR
 	PUBLIC
