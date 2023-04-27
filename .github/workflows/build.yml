@@ -2,7 +2,7 @@ name: CI
 on: push
 
 jobs:
-  build-linux:
+  build-windows:
     name: Windows Check
     runs-on: windows-latest
     strategy:
@@ -32,6 +32,36 @@ jobs:
                 build/Release/*.cso
                 build/Release/*.obj
                 build/Release/*.png
+
+  build-linux:
+    name: Linux Check
+    runs-on: ubuntu-latest
+    strategy:
+        fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configure
+        run: |
+            mkdir build
+            cd build
+            cmake -G "Unix Makefiles" ..
+      - name: Build
+        run: |
+            cd build
+            cmake --build . --config release --target install -- -j`nproc`
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name:  RGL_Samples_${{ matrix.arch }}
+          path: |
+                build/Release/*-*
+                build/Release/*.spv
+                build/Release/*.obj
+                build/Release/*.png
+
 
   build-mac:
     name: macOS Check
