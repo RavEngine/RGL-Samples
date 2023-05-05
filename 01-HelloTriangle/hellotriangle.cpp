@@ -133,7 +133,7 @@ struct HelloWorld : public AppBase {
 			{.VertexBuffer = true},
 			sizeof(Vertex),
 			vertices,
-			RGL::BufferAccess::Shared
+			RGL::BufferAccess::Private
 		});
 		vertexBuffer->SetBufferData(vertices);
 

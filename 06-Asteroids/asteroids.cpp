@@ -153,14 +153,14 @@ struct Asteroids : public ExampleFramework {
                 uint32_t(planetData.first.size()),
                 {.VertexBuffer = true},
                 sizeof(objVertex),
-                RGL::BufferAccess::Shared
+                RGL::BufferAccess::Private
             });
             planetVertexBuffer->SetBufferData(RGL::untyped_span{planetData.first.data(),planetData.first.size() * sizeof(objVertex)});
             planetIndexBuffer = device->CreateBuffer({
                 uint32_t(planetData.second.size()),
                 {.IndexBuffer = true},
                 sizeof(uint32_t),
-                RGL::BufferAccess::Shared
+                RGL::BufferAccess::Private
             });
             planetIndexBuffer->SetBufferData(RGL::untyped_span{planetData.second.data(),planetData.second.size() * sizeof(uint32_t)});
         }
@@ -184,14 +184,14 @@ struct Asteroids : public ExampleFramework {
                 uint32_t(asteroidTotal.first.size()),
                 {.VertexBuffer = true},
                 sizeof(objVertex),
-                RGL::BufferAccess::Shared
+                RGL::BufferAccess::Private
             });
             asteroidVertexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.first.data(),asteroidTotal.first.size() * sizeof(objVertex)});
             asteroidIndexBuffer = device->CreateBuffer({
                 uint32_t(asteroidTotal.second.size()),
                 {.IndexBuffer = true},
                 sizeof(uint32_t),
-                RGL::BufferAccess::Shared
+                RGL::BufferAccess::Private
             });
             asteroidIndexBuffer->SetBufferData(RGL::untyped_span{asteroidTotal.second.data(),asteroidTotal.second.size() * sizeof(uint32_t)});
             

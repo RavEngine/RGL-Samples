@@ -555,7 +555,7 @@ struct XR : public ExampleFramework {
 			{.VertexBuffer = true},
 			sizeof(BasicObjects::Cube::Vertex),
 			BasicObjects::Cube::vertices,
-			RGL::BufferAccess::Shared
+			RGL::BufferAccess::Private
 			});
 		vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
 
@@ -563,7 +563,7 @@ struct XR : public ExampleFramework {
 			{.IndexBuffer = true},
 			sizeof(BasicObjects::Cube::indices[0]),
 			BasicObjects::Cube::indices,
-			RGL::BufferAccess::Shared
+			RGL::BufferAccess::Private
 			});
 		indexBuffer->SetBufferData(BasicObjects::Cube::indices);
 
