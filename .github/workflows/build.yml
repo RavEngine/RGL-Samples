@@ -85,7 +85,7 @@ jobs:
       - name: Build
         run: |
             cd build
-            cmake --build . --config Release --target install
+            cmake --build . --config Release --target install -- -quiet
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
