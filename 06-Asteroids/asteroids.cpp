@@ -7,8 +7,6 @@
 #include <RGL/Sampler.hpp>
 #include <RGL/RenderPass.hpp>
 #include <iostream>
-#include <SDL.h>
-#include <SDL_syswm.h>
 #include <random>
 #include <bit>
 #include <tiny_obj_loader.h>

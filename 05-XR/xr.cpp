@@ -20,6 +20,7 @@
 #define XR_USE_GRAPHICS_API_D3D12
 #include <RGL/../../src/D3D12Texture.hpp>
 #include <d3d12.h>
+using namespace Microsoft::WRL;
 #endif
 
 #include <openxr/openxr.h>

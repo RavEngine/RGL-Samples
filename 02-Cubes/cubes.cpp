@@ -6,8 +6,6 @@
 #include <RGL/Sampler.hpp>
 #include <RGL/RenderPass.hpp>
 #include <iostream>
-#include <SDL.h>
-#include <SDL_syswm.h>
 #include <random>
 #undef CreateSemaphore
 #undef LoadImage

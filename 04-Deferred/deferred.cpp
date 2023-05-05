@@ -7,7 +7,6 @@
 #include <RGL/RenderPass.hpp>
 #include <iostream>
 #include <SDL.h>
-#include <SDL_syswm.h>
 #include <random>
 
 static glm::vec3 cubePositions[]{
