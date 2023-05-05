@@ -92,4 +92,32 @@ jobs:
             name:  RGL_Samples_macOS
             path: |
                 build/Release/*.app
+                
+  build-apple-mobile:
+    name: Apple Mobile Compile Check
+    runs-on: macos-latest
+    strategy:
+        fail-fast: false
+        matrix:
+            tplatform: [OS64COMBINED, TVOSCOMBINED, SIMULATOR64, SIMULATOR_TVOS]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configure
+        run: |
+            mkdir build
+            cd build
+            cmake -G "Xcode" -DCMAKE_TOOLCHAIN_FILE="../config/ios.toolchain.cmake" -DENABLE_ARC=OFF -DPLATFORM="${{ matrix.tplatform }}" -DDEPLOYMENT_TARGET=16.0 ..
+      - name: Build
+        run: |
+            cd build
+            cmake --build . --config Release --target install -- -quiet
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+            name:  RGL_Samples_${{ matrix.tplatform }}
+            path: |
+                build/Release/*.app
     
