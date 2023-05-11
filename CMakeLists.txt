@@ -10,33 +10,67 @@ endif()
 
 project(RGL-Samples)
 
-set(SDL_STATIC ON CACHE INTERNAL "" FORCE)
-set(SDL_SHARED OFF CACHE INTERNAL "" FORCE)
-set(SDL_LIBC ON CACHE BOOL "" FORCE)
-set(SDL_RENDER_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_AUDIO_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_FILE_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_CPUINFO_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_FILESYSTEM_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_SENSOR_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_LOCALE_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_MISC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_ATOMIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_TIMERS_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_POWER_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_HAPTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-set(SDL_JOYSTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
-if(CMAKE_SYSTEM_NAME MATCHES "WindowsStore")
-	set(SDL_RENDER_ENABLED_BY_DEFAULT ON CACHE INTERNAL "")
+if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
+	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
+	# required for higher memory, atomics, and threads
+	add_definitions(-pthread)
+	add_definitions(-fexceptions)
+	add_definitions(-sUSE_SDL=2)
+	set(EM_LINK "--preload-file ${DATA_PACK}@${packname}"
+					"-s MAX_WEBGL_VERSION=2" 
+					"-s MIN_WEBGL_VERSION=2" 
+					"-s FULL_ES3=1" 
+					"-s USE_WEBGPU" 
+					"-s GL_ASSERTIONS=1" 
+					"-s OFFSCREEN_FRAMEBUFFER=1" 
+					"-s OFFSCREENCANVAS_SUPPORT=1" 
+					"-s GL_DEBUG=1" 
+					"-fexceptions" 
+					"-s PROXY_TO_PTHREAD" 
+					"-s USE_PTHREADS" 
+					"-s LLD_REPORT_UNDEFINED" 
+					"-s NO_DISABLE_EXCEPTION_CATCHING" 
+					"-s NO_DISABLE_EXCEPTION_THROWING" 
+					"-s PTHREAD_POOL_SIZE=4" 
+					"-s ASSERTIONS=1" 
+					"-s ALLOW_MEMORY_GROWTH=1" 
+					"-s MAXIMUM_MEMORY=4GB"
+					"-s USE_SDL=2"
+					"-s WASM_BIGINT"
+					"-s TOTAL_MEMORY=150MB"
+	)
+else()
+	set(SDL_STATIC ON CACHE INTERNAL "" FORCE)
+	set(SDL_SHARED OFF CACHE INTERNAL "" FORCE)
+	set(SDL_LIBC ON CACHE BOOL "" FORCE)
+	set(SDL_RENDER_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_AUDIO_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_FILE_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_CPUINFO_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_FILESYSTEM_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_SENSOR_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_LOCALE_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_MISC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_ATOMIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_TIMERS_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_POWER_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_HAPTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	set(SDL_JOYSTIC_ENABLED_BY_DEFAULT OFF CACHE INTERNAL "")
+	if(CMAKE_SYSTEM_NAME MATCHES "WindowsStore")
+		set(SDL_RENDER_ENABLED_BY_DEFAULT ON CACHE INTERNAL "")
+	endif()
+	add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 endif()
-add_subdirectory(deps/SDL2 EXCLUDE_FROM_ALL)
 
 add_subdirectory(deps/glm EXCLUDE_FROM_ALL)
 add_subdirectory(deps/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(deps/stb_image EXCLUDE_FROM_ALL)
 add_subdirectory(deps/imgui-cmake EXCLUDE_FROM_ALL)
-add_subdirectory(deps/OpenXR-SDK EXCLUDE_FROM_ALL)
 add_subdirectory(deps/tinyobjloader EXCLUDE_FROM_ALL)
+
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten")
+	add_subdirectory(deps/OpenXR-SDK EXCLUDE_FROM_ALL)
+endif()
 
 if(NOT (CMAKE_VS_PLATFORM_NAME STREQUAL ""))
 	if(CMAKE_VS_PLATFORM_NAME_DEFAULT STREQUAL CMAKE_VS_PLATFORM_NAME)
@@ -88,13 +122,17 @@ endif()
 if (CMAKE_SYSTEM_NAME MATCHES WindowsStore)
 	add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
 	add_definitions(-D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
-else()
+endif()
+
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(SDLMAIN_LIB "SDL2main")
+	set(SDLLIB "SDL2-static")
+	set(SDL_HEADERS "sdl_headers_copy")
 endif()
 
 target_link_libraries(${PROJECT_NAME}-Common 
 	PUBLIC
-		SDL2-static ${SDLMAIN_LIB}
+		${SDLLIB} ${SDLMAIN_LIB}
 		RGL
 		glm
         fmt
@@ -140,7 +178,7 @@ macro(add_sample dir)
     	XCODE_ATTRIBUTE_MTL_LANGUAGE_REVISION "Metal24"
 		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
 	)
-	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common)
+	target_link_libraries(${dir} PRIVATE ${PROJECT_NAME}-Common ${EM_LINK})
 
 	macro(shader_compile infile stage api extension binary)
 		get_filename_component(name_only ${infile} NAME)
@@ -263,7 +301,7 @@ add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
-if (MSVC)				# OpenXR only on windows fornow
+if (CMAKE_SYSTEM_NAME MATCHES "Windows" OR CMAKE_SYSTEM_NAME MATCHES "WindowsStore")				# OpenXR only on windows fornow
 	add_sample(05-XR)
 	target_link_libraries(05-XR
 	PUBLIC
@@ -278,17 +316,19 @@ target_link_libraries(06-Asteroids
 		tinyobjloader
 )
 
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten")
+	set(EM_PROJECTS "xr_global_generated_files" "generate_openxr_header" "openxr_loader")
+endif()
+
 set_target_properties(
 	${SDLMAIN_LIB}
-	"SDL2-static"
-	"sdl_headers_copy"
+	${SDLLIB}
+	${SDL_HEADERS}
 	"RGL-Samples-Common"
     "fmt"
 	"stb_image"
 	"imgui"
-	"xr_global_generated_files"
-	"generate_openxr_header"
-	"openxr_loader"
+	${EM_PROJECTS}
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
 )
