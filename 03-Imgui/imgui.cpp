@@ -229,7 +229,7 @@ void main(){
                 vertBufLen,
 				{.VertexBuffer = true},
                 sizeof(ImDrawVert),
-				RGL::BufferAccess::Private
+				RGL::BufferAccess::Shared
             });
         }
         if (!indexBuffer || indexBuffer->getBufferSize() < indBufLen){
@@ -237,7 +237,7 @@ void main(){
                 vertBufLen,
 				{.IndexBuffer = true},
                 sizeof(ImDrawIdx),
-				RGL::BufferAccess::Private
+				RGL::BufferAccess::Shared
             });
         }
 	}
