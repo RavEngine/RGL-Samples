@@ -48,12 +48,12 @@ jobs:
           wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
           sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
           sudo apt update
-          sudo apt install cmake make clang vulkan-sdk libx11-dev libx11-xcb-dev libxtst-dev xcb libxcb-xkb-dev x11-xkb-utils libxkbcommon-x11-dev --no-install-recommends -y
+          sudo apt install cmake make clang ninja-build vulkan-sdk libx11-dev libx11-xcb-dev libxtst-dev xcb libxcb-xkb-dev x11-xkb-utils libxkbcommon-x11-dev --no-install-recommends -y
       - name: Configure
         run: |
             mkdir build
             cd build
-            CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake -G "Unix Makefiles" ..
+            CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake -G "Ninja" ..
       - name: Build
         run: |
             cd build
@@ -85,11 +85,39 @@ jobs:
       - name: Build
         run: |
             cd build
-            cmake --build . --config Release --target install
+            cmake --build . --config Release --target install -- -quiet
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
             name:  RGL_Samples_macOS
+            path: |
+                build/Release/*.app
+                
+  build-apple-mobile:
+    name: Apple Mobile Compile Check
+    runs-on: macos-latest
+    strategy:
+        fail-fast: false
+        matrix:
+            tplatform: [OS64COMBINED, TVOSCOMBINED, SIMULATOR64, SIMULATOR_TVOS]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configure
+        run: |
+            mkdir build
+            cd build
+            cmake -G "Xcode" -DCMAKE_TOOLCHAIN_FILE="../config/ios.toolchain.cmake" -DENABLE_ARC=OFF -DPLATFORM="${{ matrix.tplatform }}" -DDEPLOYMENT_TARGET=16.0 ..
+      - name: Build
+        run: |
+            cd build
+            cmake --build . --config Release --target install -- -quiet
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+            name:  RGL_Samples_${{ matrix.tplatform }}
             path: |
                 build/Release/*.app
     

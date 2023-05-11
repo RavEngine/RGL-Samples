@@ -10,6 +10,7 @@
 #include <random>
 #include <bit>
 #include <tiny_obj_loader.h>
+#include <unordered_map>
 
 struct objVertex{
     glm::vec3 pos;
@@ -24,7 +25,14 @@ namespace std{
     template<>
     struct hash<objVertex>{
         size_t operator()(const objVertex& vertex) const{
-            return std::bit_cast<uint32_t>(vertex.pos.x) ^ std::bit_cast<uint32_t>(vertex.pos.y) ^ std::bit_cast<uint32_t>(vertex.pos.z) ^ std::bit_cast<uint32_t>(vertex.normal.x) ^ std::bit_cast<uint32_t>(vertex.pos.y) ^ std::bit_cast<uint32_t>(vertex.normal.z) ^ std::bit_cast<uint32_t>(vertex.uv.x) ^ std::bit_cast<uint32_t>(vertex.uv.y);
+            auto px = reinterpret_cast<const uint32_t*>(&vertex.pos.x);
+            auto py = reinterpret_cast<const uint32_t*>(&vertex.pos.y);
+            auto pz = reinterpret_cast<const uint32_t*>(&vertex.pos.z);
+            auto nx = reinterpret_cast<const uint32_t*>(&vertex.normal.x);
+            auto ny = reinterpret_cast<const uint32_t*>(&vertex.normal.y);
+            auto nz = reinterpret_cast<const uint32_t*>(&vertex.normal.z);
+            
+            return *px ^ *py ^ *pz ^ *nx ^ *ny ^ *nz;
         }
     };
 }
