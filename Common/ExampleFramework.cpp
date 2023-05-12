@@ -82,13 +82,19 @@ cont:
         { wmi.info.cocoa.window },
 #elif __linux__
         { wmi.info.x11.display, wmi.info.x11.window },
+#elif __EMSCRIPTEN__
+        {nullptr},
 #else
 #error Unknown platform
 #endif
         true
     );
     
+#ifndef __EMSCRIPTEN__
     SDL_GetWindowSizeInPixels(window, &width, &height);
+#else
+    SDL_GetWindowSize(window, &width, &height);
+#endif
     
     // create a swapchain for the surface
     // provide it the queue which will be presented on

@@ -86,6 +86,8 @@ struct HelloWorld : public AppBase {
 			{ wmi.info.cocoa.window },
 #elif __linux__
 			{wmi.info.x11.display, wmi.info.x11.window },
+#elif __EMSCRIPTEN__
+            {nullptr},
 #else
 #error Unknown platform
 #endif
@@ -93,7 +95,11 @@ struct HelloWorld : public AppBase {
 		);
 
 		int width, height;
+#if __EMSCRIPTEN__
+        SDL_GetWindowSize(window, &width, &height);
+#else
 		SDL_GetWindowSizeInPixels(window, &width, &height);
+#endif
 		
 		// create a swapchain for the surface
 		// provide it the queue which will be presented on
