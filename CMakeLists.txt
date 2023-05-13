@@ -86,9 +86,17 @@ if(CMAKE_CROSSCOMPILING OR (VS_CROSSCOMP AND WIN32))
 	set(RGL_ENABLE_RGLC OFF CACHE INTERNAL "")
 	set(TOOLS_DIR "${CMAKE_BINARY_DIR}/host-tools" CACHE INTERNAL "")
 	file(MAKE_DIRECTORY ${TOOLS_DIR})
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${LINUX_HOST_CC} ${LINUX_HOST_CXX} -DCMAKE_BUILD_TYPE=Release ${CMAKE_CURRENT_SOURCE_DIR}
+
+	set(CC_GENERATOR "-G \"${CMAKE_GENERATOR}\"")
+	if (CMAKE_SYSTEM_NAME MATCHES "Emscripten" AND CMAKE_HOST_WIN32)
+		set(CC_GENERATOR "")
+	endif()
+
+	add_custom_command(
+		PRE_BUILD
 		WORKING_DIRECTORY ${TOOLS_DIR}
+		COMMAND ${CMAKE_COMMAND} ${CC_GENERATOR} -DCMAKE_BUILD_TYPE=Release ${CMAKE_CURRENT_SOURCE_DIR}
+		OUTPUT "${TOOLS_DIR}/CMakeCache.txt"
 	)
 	if(MSVC)
 		set(rglc_ext ".exe")
@@ -96,6 +104,7 @@ if(CMAKE_CROSSCOMPILING OR (VS_CROSSCOMP AND WIN32))
 	set(rglc_path "${TOOLS_DIR}/Release/rglc${rglc_ext}")
 	add_custom_command(
 		PRE_BUILD
+		DEPENDS "${TOOLS_DIR}/CMakeCache.txt"
 		OUTPUT "${rglc_path}" 
 		COMMAND ${CMAKE_COMMAND} --build . --config Release --target rglc
 		WORKING_DIRECTORY "${TOOLS_DIR}"
@@ -232,6 +241,9 @@ macro(add_sample dir)
                 COMPILE_FLAGS "-gline-tables-only -frecord-sources" # enable shader source debugging
 			)
 		endif()
+		if(RGL_WEBGPU_AVAILABLE)
+			shader_compile("${FILE}" "vertex" "WebGPU" "wgsl" "")
+		endif()
 	endforeach()
 	file(GLOB all_frags "${dir}/*.frag")
 	foreach(FILE ${all_frags})
@@ -259,6 +271,9 @@ macro(add_sample dir)
 				XCODE_EXPLICIT_FILE_TYPE "sourcecode.metal"
                 COMPILE_FLAGS "-gline-tables-only -frecord-sources" # enable shader source debugging
 			)
+		endif()
+		if(RGL_WEBGPU_AVAILABLE)
+			shader_compile("${FILE}" "fragment" "WebGPU" "wgsl" "")
 		endif()
 	endforeach()
 	file(GLOB all_computes "${dir}/*.comp")
@@ -328,6 +343,7 @@ set_target_properties(
     "fmt"
 	"stb_image"
 	"imgui"
+	"tinyobjloader"
 	${EM_PROJECTS}
 	PROPERTIES 
 	FOLDER "RGL Samples Dependencies"
