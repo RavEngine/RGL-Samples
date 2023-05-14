@@ -1,9 +1,10 @@
 #pragma once
 #include <memory>
 #include <chrono>
+#include <SDL_main.h>
 
 #if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
-#define _UWP 1   
+#define _UWP 1
 #else
 #define _UWP 0
 #endif

@@ -134,9 +134,11 @@ if (CMAKE_SYSTEM_NAME MATCHES WindowsStore)
 endif()
 
 if(NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten")
-	set(SDLMAIN_LIB "SDL2main")
 	set(SDLLIB "SDL2-static")
 	set(SDL_HEADERS "sdl_headers_copy")
+endif()
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Emscripten" AND NOT CMAKE_SYSTEM_NAME MATCHES "WindowsStore")
+	set(SDLMAIN_LIB "SDL2main")
 endif()
 
 target_link_libraries(${PROJECT_NAME}-Common 

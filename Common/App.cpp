@@ -25,6 +25,9 @@
 #endif
 using namespace std;
 
+#undef min
+#undef max
+
 int AppBase::run(int argc, char** argv) {
 #if _WIN32 && !_UWP
 	// windows highdpi
