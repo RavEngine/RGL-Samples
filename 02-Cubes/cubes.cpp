@@ -117,9 +117,6 @@ struct Cubes : public ExampleFramework {
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Vertex,
 				},
 			},
-			.boundSamplers = {
-				textureSampler
-			},
 			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);

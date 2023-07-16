@@ -195,9 +195,6 @@ struct Deferred : public ExampleFramework {
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
             },
-            .boundSamplers = {
-                textureSampler
-            },
             .constants = {
                 {lightingAndFinalStageUbo, 0, RGL::StageVisibility::Fragment}
             }
@@ -220,9 +217,6 @@ struct Deferred : public ExampleFramework {
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::Sampler,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
-            },
-            .boundSamplers = {
-                textureSampler,
             },
             .constants = {
                 {lightingAndFinalStageUbo, 0, RGL::StageVisibility::Fragment}

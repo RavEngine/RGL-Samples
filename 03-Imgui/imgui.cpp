@@ -103,9 +103,6 @@ void main(){
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
 			},
-			.boundSamplers = {
-				textureSampler
-			},
 			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
 		};
 		auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
