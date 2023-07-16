@@ -69,7 +69,8 @@ void main(){
 )";
         
         constexpr static const char* const fragShader = R"(
-uniform sampler2D texSampler;
+layout(binding = 0) uniform sampler g_sampler;
+layout(binding = 1) uniform texture2D tex;
 
 layout(location = 0) in vec2 inUV;
 layout(location = 1) in vec4 inColor;
@@ -77,7 +78,7 @@ layout(location = 1) in vec4 inColor;
 layout(location = 0) out vec4 outColor;
 void main(){
 
-	vec4 texColor = texture(texSampler, inUV);
+	vec4 texColor = texture(sampler2D(tex,g_sampler), inUV);
     outColor = inColor * texColor;
 }
 )";
@@ -93,7 +94,7 @@ void main(){
 			.bindings = {
 				{
 					.binding = 0,
-					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::CombinedImageSampler,
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::Sampler,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
 				{
@@ -360,7 +361,8 @@ void main(){
 						});
 
 					if (ImTextureID tex_id = pcmd->GetTexID()) {
-                        commandBuffer->SetCombinedTextureSampler(textureSampler, fontsTexture.get(), 0);
+						commandBuffer->SetFragmentSampler(textureSampler, 0);
+						commandBuffer->SetFragmentTexture(fontsTexture.get(),1);
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);

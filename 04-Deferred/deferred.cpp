@@ -185,13 +185,13 @@ struct Deferred : public ExampleFramework {
         finalRenderPipelineLayout = device->CreatePipelineLayout({
             .bindings = {
                 {
-                    .binding = 0,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
+                    .binding = 1,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
                 {
-                    .binding = 1,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .binding = 0,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::Sampler,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
             },
@@ -205,51 +205,23 @@ struct Deferred : public ExampleFramework {
 
         lightRenderPipelineLayout = device->CreatePipelineLayout({
             .bindings = {
-                 {
-                    .binding = 0,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                 {
-                    .binding = 1,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                 {
-                    .binding = 2,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                 {
-                    .binding = 3,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::CombinedImageSampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
-                },
                 {
-                    .binding = 4,
+                    .binding = 1,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },       
                 {
-                    .binding = 5,
+                    .binding = 2,
                     .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },        
                 {
-                    .binding = 6,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
-                },
-                {
-                    .binding = 7,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
+                    .binding = 0,
+                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::Sampler,
                     .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
                 },
             },
             .boundSamplers = {
-                textureSampler,
-                textureSampler,
-                textureSampler,
                 textureSampler,
             },
             .constants = {
@@ -646,9 +618,9 @@ struct Deferred : public ExampleFramework {
             .extent = {nextImgSize.width, nextImgSize.height}
         });
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
-        commandBuffer->SetCombinedTextureSampler(textureSampler, colorTexture.get(), 0);
-        commandBuffer->SetCombinedTextureSampler(textureSampler, normalTexture.get(), 1);
-        commandBuffer->SetCombinedTextureSampler(textureSampler, positionTexture.get(), 2);
+        commandBuffer->SetFragmentTexture(colorTexture.get(), 1);
+        commandBuffer->SetFragmentTexture(normalTexture.get(), 2);
+        commandBuffer->SetFragmentSampler(textureSampler, 0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
         commandBuffer->EndRendering();
@@ -669,7 +641,8 @@ struct Deferred : public ExampleFramework {
             });
 
         commandBuffer->BindRenderPipeline(finalRenderPipeline);
-        commandBuffer->SetCombinedTextureSampler(textureSampler, lightingTexture.get(), 0);
+        commandBuffer->SetFragmentTexture(lightingTexture.get(), 1);
+        commandBuffer->SetFragmentSampler(textureSampler,0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));

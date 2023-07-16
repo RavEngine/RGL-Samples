@@ -103,7 +103,7 @@ struct Cubes : public ExampleFramework {
 			.bindings = {
 				{
 					.binding = 0,
-					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::CombinedImageSampler,
+					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::Sampler,
 					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
 				},
 				{
@@ -249,7 +249,8 @@ struct Cubes : public ExampleFramework {
         commandBuffer->BindBuffer(instanceDataBuffer, 2);
 		commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
-		commandBuffer->SetCombinedTextureSampler(textureSampler, sampledTexture.get(), 0);
+		commandBuffer->SetFragmentSampler(textureSampler,0);
+		commandBuffer->SetFragmentTexture(sampledTexture.get(), 1);
 		commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
             .nInstances = nCubes
 		});
