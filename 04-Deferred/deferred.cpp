@@ -168,7 +168,7 @@ struct Deferred : public ExampleFramework {
             4,
             sizeof(uint32_t),
             RGL::BufferAccess::Shared,
-            {.TransferDestination = true}
+            {.TransferDestination = true, .ReadbackTarget = true}
          });
         imageDownloadBuffer->MapMemory();
 
