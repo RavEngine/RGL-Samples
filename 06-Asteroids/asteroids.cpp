@@ -338,14 +338,14 @@ struct Asteroids : public ExampleFramework {
             .bindings = {
                 {
                     .binding = 2,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
+                    .type = RGL::BindingType::StorageBuffer,
+                    .stageFlags = RGL::BindingVisibility::Compute,
                     .writable = true
                 },
                 {
                     .binding = 3,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::StorageBuffer,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Compute,
+                    .type = RGL::BindingType::StorageBuffer,
+                    .stageFlags = RGL::BindingVisibility::Compute,
                     .writable = true
                 },
             },

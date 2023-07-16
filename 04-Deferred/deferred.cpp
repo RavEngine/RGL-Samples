@@ -186,13 +186,13 @@ struct Deferred : public ExampleFramework {
             .bindings = {
                 {
                     .binding = 1,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                    .type = RGL::BindingType::SampledImage,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
                 },
                 {
                     .binding = 0,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::Sampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                    .type = RGL::BindingType::Sampler,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
                 },
             },
             .constants = {
@@ -204,18 +204,18 @@ struct Deferred : public ExampleFramework {
             .bindings = {
                 {
                     .binding = 1,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                    .type = RGL::BindingType::SampledImage,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
                 },       
                 {
                     .binding = 2,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::SampledImage,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                    .type = RGL::BindingType::SampledImage,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
                 },        
                 {
                     .binding = 0,
-                    .type = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::Type::Sampler,
-                    .stageFlags = RGL::PipelineLayoutDescriptor::LayoutBindingDesc::StageFlags::Fragment,
+                    .type = RGL::BindingType::Sampler,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
                 },
             },
             .constants = {

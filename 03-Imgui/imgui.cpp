@@ -94,13 +94,13 @@ void main(){
 			.bindings = {
 				{
 					.binding = 0,
-					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::Sampler,
-					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
+					.type = RGL::BindingType::Sampler,
+					.stageFlags = RGL::BindingVisibility::Fragment,
 				},
 				{
 					.binding = 1,
-					.type = decltype(layoutConfig)::LayoutBindingDesc::Type::SampledImage,
-					.stageFlags = decltype(layoutConfig)::LayoutBindingDesc::StageFlags::Fragment,
+					.type = RGL::BindingType::SampledImage,
+					.stageFlags = RGL::BindingVisibility::Fragment,
 				},
 			},
 			.constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
