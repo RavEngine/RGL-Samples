@@ -1,4 +1,3 @@
-#version 450
 
 layout(binding = 0) uniform sampler g_sampler;
 layout(binding = 1) uniform texture2D tex;

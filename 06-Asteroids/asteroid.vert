@@ -1,4 +1,3 @@
-#version 460
 #extension GL_GOOGLE_include_directive : enable
 #include "asteroid_common.glsl"
 

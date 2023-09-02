@@ -1,4 +1,3 @@
-#version 450
 
 layout(push_constant) uniform UniformBufferObject{
     ivec2 scdim;
