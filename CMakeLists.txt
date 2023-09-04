@@ -17,14 +17,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	add_definitions(-fexceptions)
 	add_definitions(-sUSE_SDL=2)
         set(EM_LINK
-                        "-s MAX_WEBGL_VERSION=2"
-                        "-s MIN_WEBGL_VERSION=2"
-                        "-s FULL_ES3=1"
                         "-s USE_WEBGPU"
-                        "-s GL_ASSERTIONS=1"
-                        "-s OFFSCREEN_FRAMEBUFFER=1"
-                        "-s OFFSCREENCANVAS_SUPPORT=1"
-                        "-s GL_DEBUG=1"
                         "-fexceptions"
                         "-s PROXY_TO_PTHREAD"
                         "-s USE_PTHREADS"
@@ -33,8 +26,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
                         "-s NO_DISABLE_EXCEPTION_THROWING"
                         "-s PTHREAD_POOL_SIZE=4"
                         "-s ASSERTIONS=1"
-                        "-s ALLOW_MEMORY_GROWTH=1"
-                        "-s MAXIMUM_MEMORY=4GB"
                         "-s USE_SDL=2"
                         "-s WASM_BIGINT"
                         "-s TOTAL_MEMORY=150MB"
