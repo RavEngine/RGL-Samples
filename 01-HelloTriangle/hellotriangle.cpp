@@ -73,7 +73,9 @@ struct HelloWorld : public AppBase {
 		SDL_SysWMinfo wmi;
 		SDL_VERSION(&wmi.version);
 		if (!SDL_GetWindowWMInfo(window, &wmi)) {
-			throw std::runtime_error("Cannot get native window information");
+			#if !__EMSCRIPTEN__
+				throw std::runtime_error("Cannot get native window information");
+			#endif
 		}
 		surface = RGL::CreateSurfaceFromPlatformHandle(
 #if _UWP
@@ -87,7 +89,7 @@ struct HelloWorld : public AppBase {
 #elif __linux__
 			{wmi.info.x11.display, wmi.info.x11.window },
 #elif __EMSCRIPTEN__
-            {nullptr},
+            {"#canvas"},
 #else
 #error Unknown platform
 #endif

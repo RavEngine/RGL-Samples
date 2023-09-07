@@ -16,6 +16,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	add_definitions(-pthread)
 	add_definitions(-fexceptions)
 	add_definitions(-sUSE_SDL=2)
+	add_definitions(-sASYNCIFY)
         set(EM_LINK
                         "-s USE_WEBGPU"
                         "-fexceptions"
@@ -28,6 +29,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
                         "-s ASSERTIONS=1"
                         "-s USE_SDL=2"
                         "-s WASM_BIGINT"
+						"-s ASYNCIFY"			# required for WebGPU!!
                         "-s TOTAL_MEMORY=150MB"
 	)
 else()
