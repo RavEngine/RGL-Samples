@@ -122,6 +122,11 @@ struct HelloWorld : public AppBase {
 				extension = ".cso";
 				return std::filesystem::path(name + extension);
 				break;
+			case RGL::API::WebGPU:
+				backendPath = "WebGPU";
+				extension = ".wgsl";
+				return std::filesystem::path(name + extension);
+				break;
 			default:
 				throw std::runtime_error("Shader loading not implemented");
 			}

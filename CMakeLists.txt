@@ -13,15 +13,12 @@ project(RGL-Samples)
 if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 	# required for higher memory, atomics, and threads
-	add_definitions(-pthread)
 	add_definitions(-fexceptions)
 	add_definitions(-sUSE_SDL=2)
-	add_definitions(-sASYNCIFY)
+	add_definitions(-sASYNCIFY)			# required for WebGPU!!
         set(EM_LINK
                         "-s USE_WEBGPU"
                         "-fexceptions"
-                        "-s PROXY_TO_PTHREAD"
-                        "-s USE_PTHREADS"
                         "-s LLD_REPORT_UNDEFINED"
                         "-s NO_DISABLE_EXCEPTION_CATCHING"
                         "-s NO_DISABLE_EXCEPTION_THROWING"
