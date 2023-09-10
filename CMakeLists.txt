@@ -14,11 +14,15 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 	# required for higher memory, atomics, and threads
 	add_definitions(-fexceptions)
+	add_definitions(-pthread)
 	add_definitions(-sUSE_SDL=2)
 	add_definitions(-sASYNCIFY)			# required for WebGPU!!
         set(EM_LINK
                         "-s USE_WEBGPU"
+						"--preload-file \"${CMAKE_BINARY_DIR}/shaders/\"@shaders"
                         "-fexceptions"
+						"-s USE_PTHREADS"
+						"-s PROXY_TO_PTHREAD"
                         "-s LLD_REPORT_UNDEFINED"
                         "-s NO_DISABLE_EXCEPTION_CATCHING"
                         "-s NO_DISABLE_EXCEPTION_THROWING"
