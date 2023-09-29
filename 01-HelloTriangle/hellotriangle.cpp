@@ -241,7 +241,6 @@ struct HelloWorld : public AppBase {
         
         renderPass->SetAttachmentTexture(0, nextimg);
 
-		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 		commandBuffer->BeginRendering(renderPass);
 
 		commandBuffer->SetViewport({
@@ -259,7 +258,6 @@ struct HelloWorld : public AppBase {
 		commandBuffer->Draw(std::size(vertices));
 
 		commandBuffer->EndRendering();
-		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 
 		commandBuffer->End();
 		

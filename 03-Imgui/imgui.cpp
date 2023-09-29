@@ -299,7 +299,7 @@ void main(){
         
         commandBuffer->Reset();
         commandBuffer->Begin();
-		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
+
         commandBuffer->BeginRendering(renderPass);
         commandBuffer->BindRenderPipeline(renderPipeline);
 
@@ -374,7 +374,7 @@ void main(){
             indexBufferOffset += (size_t)cmd_list->IdxBuffer.Size;
 		}
         commandBuffer->EndRendering();
-		commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
+
 		commandBuffer->End();
         vertexBuffer->UnmapMemory();
         indexBuffer->UnmapMemory();

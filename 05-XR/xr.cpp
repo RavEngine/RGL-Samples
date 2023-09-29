@@ -712,8 +712,6 @@ struct XR : public ExampleFramework {
 			renderPass->SetAttachmentTexture(0, nextimg);
 			renderPass->SetDepthAttachmentTexture(depthTexture);	// we recreated it so we need to reset it
 
-
-			commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 			commandBuffer->BeginRendering(renderPass);
 
 			commandBuffer->SetViewport({
@@ -731,7 +729,6 @@ struct XR : public ExampleFramework {
 			commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
 
 			commandBuffer->EndRendering();
-			commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
 		};
 
 		for (uint32_t i = 0; i < view_count; i++) {

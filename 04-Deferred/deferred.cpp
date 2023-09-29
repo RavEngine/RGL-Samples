@@ -113,21 +113,6 @@ struct Deferred : public ExampleFramework {
             .debugName = "ID texture",
             .readbackEnabled = true
         });
-
-        // the textures begin in the wrong layout
-        // we need to transition them to the layout the first pass is expecting
-        auto tmpcmd = commandQueue->CreateCommandBuffer();
-        auto tmpfence = device->CreateFence(false);
-        tmpcmd->Begin();
-        for (const auto& ptr : { colorTexture , normalTexture, positionTexture, lightingTexture, idTexture }) {
-            tmpcmd->TransitionResource(ptr.get(), RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
-        }
-
-        tmpcmd->End();
-        tmpcmd->Commit({
-            .signalFence = tmpfence
-        });
-        tmpfence->Wait();
     }
     void sampleinit(int argc, char** argv) final {
         
@@ -571,9 +556,6 @@ struct Deferred : public ExampleFramework {
         auto nextImgSize = nextimg->GetSize();
         
         // first do the deferred pass
-        for (const auto& ptr : { colorTexture, normalTexture, positionTexture, idTexture }) {
-            commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
-        }
 
         commandBuffer->BeginRendering(deferredRenderPass);
         commandBuffer->BindRenderPipeline(deferredRenderPipeline);
@@ -597,10 +579,6 @@ struct Deferred : public ExampleFramework {
         commandBuffer->EndRendering();
         
         // then do the lighting pass
-        for (const auto& ptr : { colorTexture, normalTexture, positionTexture, idTexture }) {
-            commandBuffer->TransitionResource(ptr.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Top);
-        }
-        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
 
         commandBuffer->BeginRendering(dirLightRenderPass);
         commandBuffer->BindRenderPipeline(dirLightRenderPipeline);
@@ -618,12 +596,10 @@ struct Deferred : public ExampleFramework {
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
         commandBuffer->EndRendering();
-        commandBuffer->TransitionResource(lightingTexture.get(), RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
 
         // next do the final render
         finalRenderPass->SetAttachmentTexture(0, nextimg);
 
-        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
         commandBuffer->BeginRendering(finalRenderPass);
 
         commandBuffer->SetViewport({
@@ -652,7 +628,6 @@ struct Deferred : public ExampleFramework {
         }
         commandBuffer->EndRendering();
 
-        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->End();
         
         RGL::CommitConfig commitconfig{
@@ -688,9 +663,7 @@ struct Deferred : public ExampleFramework {
         auto tmpfence = device->CreateFence(false);
         tmpcmd->Begin();
        
-        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::ResourceLayout::TransferSourceOptimal, RGL::TransitionPosition::Top);
         tmpcmd->CopyTextureToBuffer(idTexture.get(), { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
-        tmpcmd->TransitionResource(idTexture.get(), RGL::ResourceLayout::TransferSourceOptimal, RGL::ResourceLayout::ShaderReadOnlyOptimal, RGL::TransitionPosition::Bottom);
 
         tmpcmd->End();
         tmpcmd->Commit({

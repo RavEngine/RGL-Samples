@@ -386,10 +386,6 @@ struct Asteroids : public ExampleFramework {
         commandBuffer->DispatchCompute(nAsteroids, 1, 1);
         commandBuffer->EndCompute();
 
-        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::Undefined, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::TransitionPosition::Top);
-        commandBuffer->SetResourceBarrier({
-           .buffers = {indirectBuffer}
-        });
         commandBuffer->BeginRendering(renderPass);
 
         commandBuffer->SetViewport({
@@ -432,7 +428,6 @@ struct Asteroids : public ExampleFramework {
         });
 
         commandBuffer->EndRendering();
-        commandBuffer->TransitionResource(nextimg, RGL::ResourceLayout::ColorAttachmentOptimal, RGL::ResourceLayout::Present, RGL::TransitionPosition::Bottom);
         commandBuffer->End();
         
         RGL::CommitConfig commitconfig{
