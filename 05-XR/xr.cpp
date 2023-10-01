@@ -386,7 +386,8 @@ struct XR : public ExampleFramework {
 						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
 						.format = RGL::TextureFormat::BGRA8_Unorm,
 					},
-					device
+					device,
+					D3D12_RESOURCE_STATE_RENDER_TARGET
 				);
 #elif RGL_VK_AVAILABLE
 				Fatal("Vk: not implemented");
@@ -435,7 +436,8 @@ struct XR : public ExampleFramework {
 						.height = xr.viewConfigurationViews[i].recommendedImageRectHeight,
 						.format = RGL::TextureFormat::D32SFloat
 						},
-						device
+						device,
+						D3D12_RESOURCE_STATE_DEPTH_WRITE
 					);
 #endif
 				}
@@ -461,8 +463,9 @@ struct XR : public ExampleFramework {
 					   }
 					};
 					VkImageView imageView;
+					//TODO: this std::reinterpret_pointer_cast seems sketchy and it is unknown if it actually works here.
 					vkCreateImageView(*(VkDevice*)(devicedata.vkData.device), &createInfo, nullptr, &imageView);
-					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureVk>(imageView, img.vkImage.image, RGL::Dimension{ xr.viewConfigurationViews[i].recommendedImageRectWidth, xr.viewConfigurationViews[i].recommendedImageRectHeight});
+					xr.rglDepthSwapchainImages[i][j] = std::make_unique<RGL::TextureVk>(std::reinterpret_pointer_cast <RGL::DeviceVk>(device), imageView, img.vkImage.image, RGL::Dimension{ xr.viewConfigurationViews[i].recommendedImageRectWidth, xr.viewConfigurationViews[i].recommendedImageRectHeight});
 #endif
 				}
 			}
@@ -541,7 +544,8 @@ struct XR : public ExampleFramework {
 			.aspect = {.HasDepth = true},
 			.width = (uint32_t)width,
 			.height = (uint32_t)height,
-			.format = RGL::TextureFormat::D32SFloat
+			.format = RGL::TextureFormat::D32SFloat,
+			.debugName = "Depth Texture"
 			}
 		);
 	}

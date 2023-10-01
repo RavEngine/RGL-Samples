@@ -73,7 +73,7 @@ cont:
     }
     surface = RGL::CreateSurfaceFromPlatformHandle(
 #if _UWP
-        { &wmi.info.winrt.window },
+        { wmi.info.winrt.window },
 #elif _WIN32
         {&wmi.info.win.window},
 #elif TARGET_OS_IPHONE
