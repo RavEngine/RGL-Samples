@@ -39,7 +39,8 @@ struct Cubes : public ExampleFramework {
 			.aspect = {.HasDepth = true},
 			.width = (uint32_t)width,
 			.height = (uint32_t)height,
-			.format = RGL::TextureFormat::D32SFloat
+			.format = RGL::TextureFormat::D32SFloat,
+			.debugName = "Depth Texture"
 			}
 		);
 	}
