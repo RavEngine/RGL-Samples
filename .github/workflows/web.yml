@@ -1,4 +1,4 @@
-name: Build-Samples
+name: Build-Web
 on: push
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
           source emsdk/emsdk_env.sh
           mkdir build
           cd build
-          emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
+          emcmake cmake -G Ninja -DCMAKE_BUILD_TYPE=Release  ..
           cmake --build . --target 01-HelloTriangle --parallel
       - name: Prepare for upload
         run: |
