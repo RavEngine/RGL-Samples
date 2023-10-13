@@ -125,7 +125,7 @@ struct HelloWorld : public AppBase {
 			case RGL::API::WebGPU:
 				backendPath = "WebGPU";
 				extension = ".wgsl";
-				return std::filesystem::path(name + extension);
+				return std::filesystem::path("shaders") / "WebGPU" / std::filesystem::path(name + extension);
 				break;
 			default:
 				throw std::runtime_error("Shader loading not implemented");
