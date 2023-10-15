@@ -25,6 +25,7 @@ public:
 	virtual const char* SampleName() = 0;
 	virtual void init(int argc, char** argv) = 0;
 	virtual void tick() = 0;
+	void tickimpl();
     virtual void internaltick(){}
 	virtual void shutdown() = 0;
 	virtual void sizechanged(int width, int height) {}

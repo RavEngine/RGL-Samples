@@ -28,6 +28,51 @@ using namespace std;
 #undef min
 #undef max
 
+#if __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
+bool app_quit = false;
+AppBase* currentApp = nullptr;
+
+void main_loop(){
+	currentApp->tickimpl();
+}
+
+void AppBase::tickimpl(){
+		SDL_Event event;
+#if __APPLE__
+        AppleAutoreleasePoolInit();
+#endif
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+				case SDL_QUIT:
+					app_quit = true;
+					break;
+				case SDL_WINDOWEVENT: {
+					const SDL_WindowEvent& wev = event.window;
+					switch (wev.event) {
+						case SDL_WINDOWEVENT_RESIZED:
+						case SDL_WINDOWEVENT_SIZE_CHANGED:
+							sizechanged(wev.data1 * wmScaleFactor, wev.data2 * wmScaleFactor);
+							break;
+					}
+				}
+			}
+            onevent(event);
+		}
+		auto now = clocktype::now();
+		auto deltaTimeMicroseconds = std::min(std::chrono::duration_cast<timeDiff>(now - lastframeTime), maxTimeStep);
+		float deltaSeconds = std::chrono::duration<decltype(deltaSeconds)>(deltaTimeMicroseconds).count();
+		currentScale = deltaSeconds * evalNormal;
+        internaltick();
+		tick();
+		lastframeTime = now;
+#if __APPLE__
+        AppleAutoreleasePoolDrain();
+#endif
+}
+
 int AppBase::run(int argc, char** argv) {
 #if _WIN32 && !_UWP
 	// windows highdpi
@@ -78,46 +123,21 @@ int AppBase::run(int argc, char** argv) {
 #endif
     
 	init(argc, argv);
+	currentApp = this;
 
-	SDL_Event event;
-	bool exit = false;
-	while (!exit) {
-#if __APPLE__
-        AppleAutoreleasePoolInit();
-#endif
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_QUIT:
-					exit = true;
-					break;
-				case SDL_WINDOWEVENT: {
-					const SDL_WindowEvent& wev = event.window;
-					switch (wev.event) {
-						case SDL_WINDOWEVENT_RESIZED:
-						case SDL_WINDOWEVENT_SIZE_CHANGED:
-							sizechanged(wev.data1 * wmScaleFactor, wev.data2 * wmScaleFactor);
-							break;
-					}
-				}
-			}
-            onevent(event);
-		}
-		auto now = clocktype::now();
-		auto deltaTimeMicroseconds = std::min(std::chrono::duration_cast<timeDiff>(now - lastframeTime), maxTimeStep);
-		float deltaSeconds = std::chrono::duration<decltype(deltaSeconds)>(deltaTimeMicroseconds).count();
-		currentScale = deltaSeconds * evalNormal;
-        internaltick();
-		tick();
-		lastframeTime = now;
-#if __APPLE__
-        AppleAutoreleasePoolDrain();
-#endif
+#if __EMSCRIPTEN__
+	emscripten_set_main_loop(main_loop, 0, 1);
+#else
+	while(!app_quit){
+		main_loop();
 	}
-
 	shutdown();
 	SDL_DestroyWindow(window);
 	window = nullptr;
 	SDL_Quit();
+#endif
+
+	
 	
 	return 0;
 }

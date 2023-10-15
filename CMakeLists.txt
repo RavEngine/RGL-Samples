@@ -16,7 +16,6 @@ if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
 	add_definitions(-fexceptions)
 	add_definitions(-pthread)
 	add_definitions(-sUSE_SDL=2)
-	add_definitions(-sASYNCIFY)			# required for WebGPU!!
         set(EM_LINK
                         "-s USE_WEBGPU"
 						"--preload-file \"${CMAKE_BINARY_DIR}/shaders/\"@shaders"
@@ -84,7 +83,7 @@ if(CMAKE_CROSSCOMPILING OR (VS_CROSSCOMP AND WIN32))
 	set(CC_GENERATOR "-G \"${CMAKE_GENERATOR}\"")
 	if (CMAKE_SYSTEM_NAME MATCHES "Emscripten" AND CMAKE_HOST_WIN32)
 		set(CC_GENERATOR "")
-		set(HT_ENABLE_WGSL "-DST_ENABLE_WGSL=ON")
+		set(HT_ENABLE_WGSL "-DRGL_ENABLE_WEBGPU=ON")	# otherwise the separate compiler exe will not know that WGSL output should be enabled
 	endif()
 
 	add_custom_command(
