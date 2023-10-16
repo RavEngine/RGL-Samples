@@ -313,7 +313,7 @@ add_sample(01-HelloTriangle)
 add_sample(02-Cubes)
 add_sample(03-Imgui)
 add_sample(04-Deferred)
-if (CMAKE_SYSTEM_NAME MATCHES "Windows" OR CMAKE_SYSTEM_NAME MATCHES "WindowsStore")				# OpenXR only on windows fornow
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")				# OpenXR only on windows fornow
 	add_sample(05-XR)
 	target_link_libraries(05-XR
 	PUBLIC

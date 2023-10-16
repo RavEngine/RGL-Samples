@@ -191,13 +191,6 @@ struct HelloWorld : public AppBase {
             .inputAssembly = {
                 .topology = RGL::PrimitiveTopology::TriangleList,
             },
-            .viewport = {
-                .width = (float)width,
-                .height = (float)height
-            },
-            .scissor = {
-                .extent = {width, height}
-            },
             .rasterizerConfig = {
                 .windingOrder = RGL::WindingOrder::Counterclockwise,
             },
