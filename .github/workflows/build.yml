@@ -100,7 +100,7 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            tplatform: [OS64COMBINED, TVOSCOMBINED, SIMULATOR64, SIMULATOR_TVOS]
+            tplatform: [iOS, tvOS]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -110,7 +110,7 @@ jobs:
         run: |
             mkdir build
             cd build
-            cmake -G "Xcode" -DCMAKE_TOOLCHAIN_FILE="../config/ios.toolchain.cmake" -DENABLE_ARC=OFF -DPLATFORM="${{ matrix.tplatform }}" -DDEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_CODE_SIGNING_ENABLED=NO ..
+            cmake -G "Xcode" -DCMAKE_SYSTEM_NAME="${{ matrix.tplatform }}" -DCMAKE_XCODE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_CODE_SIGNING_ENABLED=NO ..
       - name: Build
         run: |
             cd build
