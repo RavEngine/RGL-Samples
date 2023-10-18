@@ -81,14 +81,21 @@ if(CMAKE_CROSSCOMPILING OR (VS_CROSSCOMP AND WIN32))
 	file(MAKE_DIRECTORY ${TOOLS_DIR})
 
 	set(CC_GENERATOR "-G \"${CMAKE_GENERATOR}\"")
-	if (CMAKE_SYSTEM_NAME MATCHES "Emscripten" AND CMAKE_HOST_WIN32)
-		set(CC_GENERATOR "")
+	if (CMAKE_SYSTEM_NAME MATCHES "Emscripten")
+		if (CMAKE_HOST_WIN32)
+			set(CC_GENERATOR "")		# otherwise it'll try to use ninja/make which may not exist in that context
+		endif()
 		set(HT_ENABLE_WGSL "-DRGL_ENABLE_WEBGPU=ON")	# otherwise the separate compiler exe will not know that WGSL output should be enabled
 	endif()
+
+	if (APPLE)	# no idea why this is required, but without it, the host tools get generated for iOS, even though nowhere in the command is that specified
+		set(RGL_APPLE_HOST "-DCMAKE_SYSTEM_NAME=\"Darwin\"")
+	endif()
+
 	add_custom_command(
 		PRE_BUILD
 		WORKING_DIRECTORY ${TOOLS_DIR}
-		COMMAND ${CMAKE_COMMAND} ${CC_GENERATOR} -DCMAKE_BUILD_TYPE=Release ${HT_ENABLE_WGSL} "${CMAKE_CURRENT_SOURCE_DIR}/deps/RGL"
+		COMMAND ${CMAKE_COMMAND} ${CC_GENERATOR} ${RGL_APPLE_HOST} -DCMAKE_BUILD_TYPE=Release ${HT_ENABLE_WGSL} "${CMAKE_CURRENT_SOURCE_DIR}/deps/RGL"
 		OUTPUT "${TOOLS_DIR}/CMakeCache.txt"
 	)
 	if(MSVC)
