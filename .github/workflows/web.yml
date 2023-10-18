@@ -30,7 +30,7 @@ jobs:
       - name: Prepare for upload
         run: |
            mkdir _site
-           mv build/01-HelloTriangle.html _site/index.html
+           mv build/Release/01-HelloTriangle.html _site/index.html
            mv build/01-* _site/
       - name: Fix permissions
         run: |
