@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.23)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR} CACHE INTERNAL "")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<CONFIGURATION>)
@@ -88,14 +88,11 @@ if(CMAKE_CROSSCOMPILING OR (VS_CROSSCOMP AND WIN32))
 		set(HT_ENABLE_WGSL "-DRGL_ENABLE_WEBGPU=ON")	# otherwise the separate compiler exe will not know that WGSL output should be enabled
 	endif()
 
-	if (APPLE)	# no idea why this is required, but without it, the host tools get generated for iOS, even though nowhere in the command is that specified
-		set(RGL_APPLE_HOST "-DCMAKE_SYSTEM_NAME=\"Darwin\"")
-	endif()
-
 	add_custom_command(
 		PRE_BUILD
 		WORKING_DIRECTORY ${TOOLS_DIR}
-		COMMAND ${CMAKE_COMMAND} ${CC_GENERATOR} ${RGL_APPLE_HOST} -DCMAKE_BUILD_TYPE=Release ${HT_ENABLE_WGSL} "${CMAKE_CURRENT_SOURCE_DIR}/deps/RGL"
+		DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/deps/RGL/CMakeLists.txt"
+		COMMAND ${CMAKE_COMMAND} ${CC_GENERATOR} -DCMAKE_BUILD_TYPE=Release ${HT_ENABLE_WGSL} "${CMAKE_CURRENT_SOURCE_DIR}/deps/RGL"
 		OUTPUT "${TOOLS_DIR}/CMakeCache.txt"
 	)
 	if(MSVC)
@@ -327,6 +324,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")				# OpenXR only on windows fornow
 	)
 endif()
 add_sample(06-Asteroids)
+add_sample(07-Mipmap)
 
 
 target_link_libraries(06-Asteroids

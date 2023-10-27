@@ -207,4 +207,21 @@ namespace BasicObjects{
             {{-10, 10}}
         };
     }
+
+    namespace Quad{
+        struct Vertex {
+            glm::vec2 position;
+            glm::vec2 uv;
+        };
+        constexpr static Vertex vertices[] = {
+            {.position = {-1,1}, .uv = {0,0}},
+            {.position = {-1,-1}, .uv = {0,1}},
+            {.position = {1,-1}, .uv = {1,1}},
+            {.position = {1,1}, .uv = {1,0}}
+        };
+        constexpr static uint16_t indices[] = {
+            0,1,2,
+            3,0,2
+        };
+    }
 };
