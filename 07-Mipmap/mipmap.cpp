@@ -9,7 +9,8 @@ struct Mipmap : public ExampleFramework {
     
     RGLCommandBufferPtr commandBuffer;
     RGLBufferPtr vertexBuffer, indexBuffer;
-    RGLTexturePtr depthTexture;
+    RGLTexturePtr depthTexture, mipTexture;
+    RGLSamplerPtr mipSampler;
     RGLRenderPipelinePtr renderPipeline;
     RGLRenderPassPtr renderPass;
     
@@ -33,9 +34,30 @@ struct Mipmap : public ExampleFramework {
         
         createDepthTexture();
         
+        mipTexture = device->CreateTexture({
+            .usage = {.TransferDestination = true, .Sampled = true},
+            .aspect = {.HasColor = true},
+            .width = 4096,
+            .height = 4096,
+            .mipLevels = 4,
+            .format = RGL::TextureFormat::RGBA16_Sfloat,
+            .debugName = "Mip Texture"
+            }
+        );
+        mipSampler = device->CreateSampler({});
+        
         RGL::PipelineLayoutDescriptor layoutConfig{
             .bindings = {
-                
+                {
+                    .binding = 0,
+                    .type = RGL::BindingType::Sampler,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
+                },
+                {
+                    .binding = 1,
+                    .type = RGL::BindingType::SampledImage,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
+                },
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
         };
@@ -157,6 +179,8 @@ struct Mipmap : public ExampleFramework {
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
+        commandBuffer->SetFragmentSampler(mipSampler, 0);
+        commandBuffer->SetFragmentTexture(mipTexture.get(), 1);
         commandBuffer->DrawIndexed(std::size(BasicObjects::Quad::indices));
 
         commandBuffer->EndRendering();
@@ -174,6 +198,8 @@ struct Mipmap : public ExampleFramework {
         commandBuffer.reset();
         renderPass.reset();
         renderPipeline.reset();
+        mipTexture.reset();
+        mipSampler.reset();
         depthTexture.reset();
         indexBuffer.reset();
         vertexBuffer.reset();
