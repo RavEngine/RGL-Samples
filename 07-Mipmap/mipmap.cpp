@@ -1,4 +1,10 @@
 #include "Common/ExampleFramework.hpp"
+#include <RGL/Buffer.hpp>
+#include <RGL/Texture.hpp>
+#include <RGL/Sampler.hpp>
+#include <RGL/Pipeline.hpp>
+#include <RGL/RenderPass.hpp>
+#include <RGL/CommandBuffer.hpp>
 
 struct Mipmap : public ExampleFramework {
     
@@ -164,7 +170,7 @@ struct Mipmap : public ExampleFramework {
         auto computePipelineLayout = device->CreatePipelineLayout({
             .bindings = {
                 {
-                    .binding = 2,
+                    .binding = 0,
                     .type = RGL::BindingType::StorageImage,
                     .stageFlags = RGL::BindingVisibility::Compute,
                     .writable = true
