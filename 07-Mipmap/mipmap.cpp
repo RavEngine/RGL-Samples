@@ -2,17 +2,31 @@
 
 struct Mipmap : public ExampleFramework {
     
-    struct alignas(16) UniformBufferObject {
+    struct {
         glm::mat4 viewProj;
-        
     } ubo;
+    
+    struct {
+        glm::vec4 color;
+        glm::ivec2 dim;
+    } comp_ubo;
     
     RGLCommandBufferPtr commandBuffer;
     RGLBufferPtr vertexBuffer, indexBuffer;
     RGLTexturePtr depthTexture, mipTexture;
     RGLSamplerPtr mipSampler;
     RGLRenderPipelinePtr renderPipeline;
+    RGLComputePipelinePtr mipPipeline;
     RGLRenderPassPtr renderPass;
+    
+    constexpr static auto num_mips = 4;
+    constexpr static auto img_size = 4096;
+    constexpr static glm::vec4 colors[] = {
+        {195/255.f,88/255.f,49/255.f, 1},
+        {96/255.f,111/255.f,140/255.f, 1},
+        {88/255.f,114/255.f,70/255.f, 1},
+        {34/255.f,230/255.f,202/255.f, 1},
+    };
     
     void sampleinit(int argc, char** argv) final {
         
@@ -35,18 +49,23 @@ struct Mipmap : public ExampleFramework {
         createDepthTexture();
         
         mipTexture = device->CreateTexture({
-            .usage = {.TransferDestination = true, .Sampled = true},
+            .usage = {.TransferDestination = true, .Sampled = true, .Storage = true},
             .aspect = {.HasColor = true},
-            .width = 4096,
-            .height = 4096,
-            .mipLevels = 4,
+            .width = img_size,
+            .height = img_size,
+            .mipLevels = num_mips,
             .format = RGL::TextureFormat::RGBA16_Sfloat,
             .debugName = "Mip Texture"
             }
         );
-        mipSampler = device->CreateSampler({});
-        
-        RGL::PipelineLayoutDescriptor layoutConfig{
+        // set sampler to trilinear filtering
+        mipSampler = device->CreateSampler({
+            .minFilter = RGL::MinMagFilterMode::Nearest,
+            .magFilter = RGL::MinMagFilterMode::Nearest,
+            .mipFilter = RGL::MipFilterMode::Nearest,
+        });
+                
+        auto renderPipelineLayout = device->CreatePipelineLayout({
             .bindings = {
                 {
                     .binding = 0,
@@ -60,9 +79,7 @@ struct Mipmap : public ExampleFramework {
                 },
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
-        };
-        
-        auto renderPipelineLayout = device->CreatePipelineLayout(layoutConfig);
+        });
         
         auto vertexShaderLibrary = GetShader("mipmap.vert");
         auto fragmentShaderLibrary = GetShader("mipmap.frag");
@@ -144,6 +161,27 @@ struct Mipmap : public ExampleFramework {
             }
         });
         
+        auto computePipelineLayout = device->CreatePipelineLayout({
+            .bindings = {
+                {
+                    .binding = 2,
+                    .type = RGL::BindingType::StorageImage,
+                    .stageFlags = RGL::BindingVisibility::Compute,
+                    .writable = true
+                },
+            },
+            .constants = {
+                {{ comp_ubo, 0, RGL::StageVisibility::Compute}}
+            }
+        });
+        mipPipeline = device->CreateComputePipeline({
+            .stage = {
+                .type = RGL::ShaderStageDesc::Type::Compute,
+                .shaderModule = GetShader("mipmap_colorset.comp")
+            },
+            .pipelineLayout = computePipelineLayout
+        });
+        
         commandBuffer = commandQueue->CreateCommandBuffer();
         camera.position.z = 10;
         camera.position.y = 0.3;
@@ -163,8 +201,22 @@ struct Mipmap : public ExampleFramework {
         auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
         auto nextImgSize = nextimg->GetSize();
 
-        renderPass->SetAttachmentTexture(0, nextimg);
-        renderPass->SetDepthAttachmentTexture(depthTexture.get());
+        renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
+        renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
+        
+        commandBuffer->BeginCompute(mipPipeline);
+        float current_width = img_size;
+        for(int i = 0; i < num_mips; i++){
+            auto view = mipTexture->GetViewForMip(i);
+            int x = 0;
+            comp_ubo.color = colors[i];
+            comp_ubo.dim = {current_width, current_width};
+            commandBuffer->SetComputeTexture(view, 0);
+            commandBuffer->SetComputeBytes(comp_ubo, 0);
+            commandBuffer->DispatchCompute(std::ceil(current_width / 32), std::ceil(current_width / 32), 1, 32, 32, 1);
+            current_width /= 2;
+        }
+        commandBuffer->EndCompute();
         
         commandBuffer->BeginRendering(renderPass);
         commandBuffer->SetViewport({
@@ -180,7 +232,7 @@ struct Mipmap : public ExampleFramework {
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
         commandBuffer->SetFragmentSampler(mipSampler, 0);
-        commandBuffer->SetFragmentTexture(mipTexture.get(), 1);
+        commandBuffer->SetFragmentTexture(mipTexture->GetDefaultView(), 1);
         commandBuffer->DrawIndexed(std::size(BasicObjects::Quad::indices));
 
         commandBuffer->EndRendering();

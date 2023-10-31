@@ -1,0 +1,17 @@
+
+uniform layout(binding=0, rgba16f) writeonly image2D mipTexture;
+
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+layout(push_constant) uniform UniformBufferObject{
+    vec4 color;
+    ivec2 dim;
+} ubo;
+
+void main(){
+    
+    if (gl_GlobalInvocationID.x >= ubo.dim.x || gl_GlobalInvocationID.y >= ubo.dim.y){
+        return;
+    }
+    
+    imageStore(mipTexture, ivec2(gl_GlobalInvocationID.xy), ubo.color);
+}
