@@ -232,7 +232,7 @@ struct HelloWorld : public AppBase {
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
         
-        renderPass->SetAttachmentTexture(0, nextimg);
+        renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 
 		commandBuffer->BeginRendering(renderPass);
 

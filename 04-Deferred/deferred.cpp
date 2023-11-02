@@ -523,15 +523,15 @@ struct Deferred : public ExampleFramework {
         });
 
         // the depth texture is not swapchained so we can set it once
-        deferredRenderPass->SetDepthAttachmentTexture(depthTexture.get());
-        deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
-        deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
-        deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
-        deferredRenderPass->SetAttachmentTexture(3, idTexture.get());
+        deferredRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(0, colorTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(1, normalTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(2, positionTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(3, idTexture->GetDefaultView());
 
-        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
-        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture.get());
-        finalRenderPass->SetDepthAttachmentTexture(depthTexture.get());
+        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture->GetDefaultView());
+        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
+        finalRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
@@ -590,15 +590,15 @@ struct Deferred : public ExampleFramework {
             .extent = {nextImgSize.width, nextImgSize.height}
         });
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
-        commandBuffer->SetFragmentTexture(colorTexture.get(), 1);
-        commandBuffer->SetFragmentTexture(normalTexture.get(), 2);
+        commandBuffer->SetFragmentTexture(colorTexture->GetDefaultView(), 1);
+        commandBuffer->SetFragmentTexture(normalTexture->GetDefaultView(), 2);
         commandBuffer->SetFragmentSampler(textureSampler, 0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->Draw(std::size(BasicObjects::ScreenTriangle::vertices));
         commandBuffer->EndRendering();
 
         // next do the final render
-        finalRenderPass->SetAttachmentTexture(0, nextimg);
+        finalRenderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 
         commandBuffer->BeginRendering(finalRenderPass);
 
@@ -611,7 +611,7 @@ struct Deferred : public ExampleFramework {
             });
 
         commandBuffer->BindRenderPipeline(finalRenderPipeline);
-        commandBuffer->SetFragmentTexture(lightingTexture.get(), 1);
+        commandBuffer->SetFragmentTexture(lightingTexture->GetDefaultView(), 1);
         commandBuffer->SetFragmentSampler(textureSampler,0);
         commandBuffer->SetVertexBuffer(screenTriVerts);
         commandBuffer->SetFragmentBytes(lightingAndFinalStageUbo, 0);
@@ -640,15 +640,15 @@ struct Deferred : public ExampleFramework {
 
     void onresize(int width, int height) final {
         updateGBuffers();
-        deferredRenderPass->SetDepthAttachmentTexture(depthTexture.get());    // we recreated it so we need to reset it
-        finalRenderPass->SetDepthAttachmentTexture(depthTexture.get());
-        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture.get());
-        deferredRenderPass->SetAttachmentTexture(0, colorTexture.get());
-        deferredRenderPass->SetAttachmentTexture(1, normalTexture.get());
-        deferredRenderPass->SetAttachmentTexture(2, positionTexture.get());
-        deferredRenderPass->SetAttachmentTexture(3, idTexture.get());
+        deferredRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());    // we recreated it so we need to reset it
+        finalRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
+        dirLightRenderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(0, colorTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(1, normalTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(2, positionTexture->GetDefaultView());
+        deferredRenderPass->SetAttachmentTexture(3, idTexture->GetDefaultView());
         
-        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture.get());
+        dirLightRenderPass->SetAttachmentTexture(0, lightingTexture->GetDefaultView());
     }
 
     void updateSelectedObject() {
@@ -663,7 +663,8 @@ struct Deferred : public ExampleFramework {
         auto tmpfence = device->CreateFence(false);
         tmpcmd->Begin();
        
-        tmpcmd->CopyTextureToBuffer(idTexture.get(), { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
+        auto view = idTexture->GetDefaultView();
+        tmpcmd->CopyTextureToBuffer(view, { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
 
         tmpcmd->End();
         tmpcmd->Commit({

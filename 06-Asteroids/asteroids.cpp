@@ -327,7 +327,7 @@ struct Asteroids : public ExampleFramework {
         });
 
         // the depth texture is not swapchained so we can set it once
-        renderPass->SetDepthAttachmentTexture(depthTexture.get());
+        renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
@@ -377,7 +377,7 @@ struct Asteroids : public ExampleFramework {
         auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
         auto nextImgSize = nextimg->GetSize();
 
-        renderPass->SetAttachmentTexture(0, nextimg);
+        renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
         
         commandBuffer->BeginCompute(lodPipeline);
         commandBuffer->SetComputeBytes(ubo,0);
@@ -440,7 +440,7 @@ struct Asteroids : public ExampleFramework {
 
     void onresize(int width, int height) final {
         createDepthTexture();
-        renderPass->SetDepthAttachmentTexture(depthTexture.get());    // we recreated it so we need to reset it
+        renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());    // we recreated it so we need to reset it
     }
 
     void sampleshutdown() final {

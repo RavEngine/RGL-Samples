@@ -655,7 +655,7 @@ struct XR : public ExampleFramework {
 			});
 
 		// the depth texture is not swapchained so we can set it once
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());
+		renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
@@ -713,8 +713,8 @@ struct XR : public ExampleFramework {
 		auto render = [this](RGL::ITexture* nextimg, RGL::ITexture* depthTexture, glm::mat4 viewProj) {
 
 			auto nextImgSize = nextimg->GetSize();
-			renderPass->SetAttachmentTexture(0, nextimg);
-			renderPass->SetDepthAttachmentTexture(depthTexture);	// we recreated it so we need to reset it
+			renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
+			renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());	// we recreated it so we need to reset it
 
 			commandBuffer->BeginRendering(renderPass);
 

@@ -26,7 +26,7 @@ struct Mipmap : public ExampleFramework {
     RGLRenderPassPtr renderPass;
     
     constexpr static auto num_mips = 4;
-    constexpr static auto img_size = 4096;
+    constexpr static auto img_size = 1024;
     constexpr static glm::vec4 colors[] = {
         {195/255.f,88/255.f,49/255.f, 1},
         {96/255.f,111/255.f,140/255.f, 1},
@@ -253,14 +253,15 @@ struct Mipmap : public ExampleFramework {
     }
     
     void sampleshutdown() final {
-        commandBuffer.reset();
         renderPass.reset();
-        renderPipeline.reset();
         mipTexture.reset();
         mipSampler.reset();
         depthTexture.reset();
         indexBuffer.reset();
         vertexBuffer.reset();
+        renderPipeline.reset();
+        mipPipeline.reset();
+        commandBuffer.reset();
     }
     
     void createDepthTexture()

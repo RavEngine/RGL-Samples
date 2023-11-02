@@ -270,7 +270,7 @@ void main(){
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
 
-		renderPass->SetAttachmentTexture(0, nextimg);
+		renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 
 		// create the unified vert / ind buffer 
 		refreshBuffers(vertexBufferLength, indexBufferLength);
@@ -359,7 +359,7 @@ void main(){
 
 					if (ImTextureID tex_id = pcmd->GetTexID()) {
 						commandBuffer->SetFragmentSampler(textureSampler, 0);
-						commandBuffer->SetFragmentTexture(fontsTexture.get(),1);
+						commandBuffer->SetFragmentTexture(fontsTexture->GetDefaultView(),1);
 					}
 
                     commandBuffer->SetVertexBytes(ubo, 0);

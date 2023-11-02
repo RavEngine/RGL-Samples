@@ -207,7 +207,7 @@ struct Cubes : public ExampleFramework {
 		});
 
 		// the depth texture is not swapchained so we can set it once
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());
+		renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());
 
 		// create command buffer
 		commandBuffer = commandQueue->CreateCommandBuffer();
@@ -229,7 +229,7 @@ struct Cubes : public ExampleFramework {
 		auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
 		auto nextImgSize = nextimg->GetSize();
 
-        renderPass->SetAttachmentTexture(0, nextimg);
+        renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 
         commandBuffer->BeginRendering(renderPass);
 
@@ -247,7 +247,7 @@ struct Cubes : public ExampleFramework {
 		commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
 		commandBuffer->SetFragmentSampler(textureSampler,0);
-		commandBuffer->SetFragmentTexture(sampledTexture.get(), 1);
+		commandBuffer->SetFragmentTexture(sampledTexture->GetDefaultView(), 1);
 		commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices), {
             .nInstances = nCubes
 		});
@@ -266,7 +266,7 @@ struct Cubes : public ExampleFramework {
 
 	void onresize(int width, int height) final {
 		createDepthTexture();
-		renderPass->SetDepthAttachmentTexture(depthTexture.get());	// we recreated it so we need to reset it
+		renderPass->SetDepthAttachmentTexture(depthTexture->GetDefaultView());	// we recreated it so we need to reset it
 	}
 
 	void sampleshutdown() final {
