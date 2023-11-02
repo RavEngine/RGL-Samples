@@ -277,7 +277,6 @@ struct Cubes : public ExampleFramework {
 		sampledTexture.reset();
 		textureSampler.reset();
 		commandBuffer.reset();
-		commandQueue.reset();
 
 		vertexBuffer.reset();
 		indexBuffer.reset();

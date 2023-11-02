@@ -710,7 +710,6 @@ struct Deferred : public ExampleFramework {
         lightingTexture.reset();
         textureSampler.reset();
         commandBuffer.reset();
-        commandQueue.reset();
 
         vertexBuffer.reset();
         indexBuffer.reset();

@@ -395,7 +395,6 @@ void main(){
 		fontsTexture.reset();
 		textureSampler.reset();
 		commandBuffer.reset();
-		commandQueue.reset();
 
 		vertexBuffer.reset();
 		indexBuffer.reset();

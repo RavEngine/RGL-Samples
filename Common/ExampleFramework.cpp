@@ -122,6 +122,7 @@ void ExampleFramework::shutdown(){
     swapchainFence.reset();
     swapchain.reset();
     surface.reset();
+    commandQueue.reset();
     device.reset();
     RGL::Shutdown();
 }

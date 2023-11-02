@@ -35,7 +35,6 @@ struct Mipmap : public ExampleFramework {
     };
     
     void sampleinit(int argc, char** argv) final {
-        
         vertexBuffer = device->CreateBuffer({
             {.VertexBuffer = true},
             sizeof(BasicObjects::Quad::Vertex),

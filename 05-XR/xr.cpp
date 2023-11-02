@@ -848,7 +848,6 @@ struct XR : public ExampleFramework {
 		renderPass.reset();
 		depthTexture.reset();
 		commandBuffer.reset();
-		commandQueue.reset();
 
 		vertexBuffer.reset();
 		indexBuffer.reset();

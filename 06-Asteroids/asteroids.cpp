@@ -448,7 +448,6 @@ struct Asteroids : public ExampleFramework {
         renderPass.reset();
         depthTexture.reset();
         commandBuffer.reset();
-        commandQueue.reset();
 
         planetVertexBuffer.reset();
         planetIndexBuffer.reset();
