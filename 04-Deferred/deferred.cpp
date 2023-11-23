@@ -660,17 +660,13 @@ struct Deferred : public ExampleFramework {
 #endif
 
         auto tmpcmd = commandQueue->CreateCommandBuffer();
-        auto tmpfence = device->CreateFence(false);
-        tmpcmd->Begin();
        
         auto view = idTexture->GetDefaultView();
         tmpcmd->CopyTextureToBuffer(view, { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
 
         tmpcmd->End();
-        tmpcmd->Commit({
-            .signalFence = tmpfence
-            });
-        tmpfence->Wait();
+        tmpcmd->Commit({});
+        tmpcmd->BlockUntilCompleted();
 
         // now we have the pixel data, so we can read it
         auto dataptr = imageDownloadBuffer->GetMappedDataPtr();
