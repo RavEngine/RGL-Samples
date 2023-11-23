@@ -662,6 +662,7 @@ struct Deferred : public ExampleFramework {
         auto tmpcmd = commandQueue->CreateCommandBuffer();
        
         auto view = idTexture->GetDefaultView();
+        tmpcmd->Begin();
         tmpcmd->CopyTextureToBuffer(view, { .offset = {x,y}, .extent = {1,1} }, 0, imageDownloadBuffer);
 
         tmpcmd->End();
