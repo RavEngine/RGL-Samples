@@ -71,6 +71,7 @@ cont:
     if (!SDL_GetWindowWMInfo(window, &wmi)) {
         throw std::runtime_error("Cannot get native window information");
     }
+    bool isWayland = wmi.subsystem == SDL_SYSWM_WAYLAND;
     surface = RGL::CreateSurfaceFromPlatformHandle(
 #if _UWP
         { wmi.info.winrt.window },
@@ -81,7 +82,7 @@ cont:
 #elif __APPLE__
         { wmi.info.cocoa.window },
 #elif __linux__
-        { wmi.info.x11.display, wmi.info.x11.window },
+        { isWayland ? static_cast<void*>(wmi.info.wl.display) : static_cast<void*>(wmi.info.x11.display), isWayland ? reinterpret_cast<uintptr_t>(wmi.info.wl.surface) : uintptr_t(wmi.info.x11.window), isWayland },
 #elif __EMSCRIPTEN__
         {nullptr},
 #else
