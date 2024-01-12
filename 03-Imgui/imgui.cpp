@@ -383,6 +383,7 @@ void main(){
 			.signalFence = swapchainFence,
 		};
 		commandBuffer->Commit(commitconfig);
+		commandBuffer->BlockUntilCompleted();
 
 		swapchain->Present(presentConfig);
 	}

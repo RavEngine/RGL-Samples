@@ -260,6 +260,7 @@ struct Cubes : public ExampleFramework {
 			.signalFence = swapchainFence,
 		};
 		commandBuffer->Commit(commitconfig);
+		commandBuffer->BlockUntilCompleted();
 
 		swapchain->Present(presentConfig);
 	}

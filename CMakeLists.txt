@@ -325,7 +325,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")				# OpenXR only on windows fornow
 endif()
 add_sample(06-Asteroids)
 add_sample(07-Mipmap)
-
+add_sample(08-Cubemap)
 
 target_link_libraries(06-Asteroids
 	PUBLIC

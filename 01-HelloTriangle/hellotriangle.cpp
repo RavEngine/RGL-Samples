@@ -259,6 +259,7 @@ struct HelloWorld : public AppBase {
 			.signalFence = swapchainFence,
 		};
 		commandBuffer->Commit(commitconfig);
+		commandBuffer->BlockUntilCompleted();
 
 		swapchain->Present(presentConfig);
 	}
