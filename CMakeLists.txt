@@ -152,7 +152,7 @@ target_link_libraries(${PROJECT_NAME}-Common
 macro(add_sample dir)
 	set(dir "${CMAKE_CURRENT_LIST_DIR}/${dir}")
 	file(GLOB_RECURSE SOURCES "${dir}/*.cpp" "${dir}/*.hpp" "${dir}/*.h")
-    file(GLOB_RECURSE RESOURCES "${dir}/*.png" "${dir}/*.obj")
+    file(GLOB_RECURSE RESOURCES "${dir}/*.png" "${dir}/*.jpg" "${dir}/*.obj")
 	if (APPLE)
 		set(ADDITIONALS ${RESOURCES})
 	endif()

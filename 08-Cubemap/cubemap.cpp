@@ -12,6 +12,8 @@ struct Cubemap : public ExampleFramework {
     RGLBufferPtr vertexBuffer;
     RGLRenderPipelinePtr pipeline;
     RGLRenderPassPtr renderPass;
+    RGLTexturePtr cubemapTexture;
+    RGLSamplerPtr sampler;
 
     struct ubo {
         glm::ivec2 screenDim;
@@ -29,7 +31,16 @@ struct Cubemap : public ExampleFramework {
 
         auto layout = device->CreatePipelineLayout({
             .bindings = {
-               
+                 {
+                    .binding = 0,
+                    .type = RGL::BindingType::Sampler,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
+                },
+                {
+                    .binding = 1,
+                    .type = RGL::BindingType::SampledImage,
+                    .stageFlags = RGL::BindingVisibility::Fragment,
+                },
             },
             .constants = {
                 {ubo, 0, RGL::StageVisibility::Fragment}
@@ -97,6 +108,34 @@ struct Cubemap : public ExampleFramework {
 
         // create command buffer
         commandBuffer = commandQueue->CreateCommandBuffer();
+
+        sampler = device->CreateSampler({});
+
+        // create cubemap
+        cubemapTexture = device->CreateTexture({
+             .usage = {.Sampled = true},
+            .aspect = {.HasColor = true},
+            .width = 1024,
+            .height = 1024,
+            .arrayLayers = 6,
+            .format = RGL::TextureFormat::BGRA8_Unorm,
+            .initialLayout = RGL::ResourceLayout::Undefined,
+            .isCubemap = true,
+            .debugName = "Cubemap"
+        });
+
+        // upload cubemap data
+        constexpr const char* const sides[] = {
+            "right.jpg",
+            "left.jpg",
+            "top.jpg",
+            "bottom.jpg",
+            "front.jpg",
+            "back.jpg"
+        };
+        for (const auto side : sides) {
+            auto data = LoadImage(side);
+        }
     }
 
     void tick() final {
@@ -125,8 +164,8 @@ struct Cubemap : public ExampleFramework {
         commandBuffer->BindRenderPipeline(pipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
-        //commandBuffer->SetFragmentSampler(mipSampler, 0);
-        //commandBuffer->SetFragmentTexture(mipTexture->GetDefaultView(), 1);
+        commandBuffer->SetFragmentSampler(sampler, 0);
+        commandBuffer->SetFragmentTexture(cubemapTexture->GetDefaultView(), 1);
         commandBuffer->Draw(3);
 
         commandBuffer->EndRendering();
@@ -142,6 +181,8 @@ struct Cubemap : public ExampleFramework {
     }
 
     void sampleshutdown() final {
+        sampler.reset();
+        cubemapTexture.reset();
         renderPass.reset();
         vertexBuffer.reset();
         pipeline.reset();
