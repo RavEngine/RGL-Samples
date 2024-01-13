@@ -197,7 +197,9 @@ struct Cubemap : public ExampleFramework {
         auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
         auto nextImgSize = nextimg->GetSize();
         
-        ubo.viewProj = camera.GenerateViewProjMatrix(nextImgSize.width, nextImgSize.height);
+        // automatically spin
+        auto viewMat = glm::toMat4(glm::quat(glm::vec3(0, getTimeSeconds() * 0.5 ,0)));
+        ubo.viewProj = camera.GenerateProjectionMatrix(nextImgSize.width, nextImgSize.height) * viewMat;
 
         renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 

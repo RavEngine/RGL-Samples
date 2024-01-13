@@ -10,5 +10,5 @@ void main(){
 
 	vec3 cubeColor = texture(samplerCube(tex,cubeSampler), inUVdir).xyz;
 
-	outcolor = vec4(cubeColor,1);
+	outcolor = vec4(cubeColor.bgr,1);
 }
