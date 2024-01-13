@@ -133,9 +133,34 @@ struct Cubemap : public ExampleFramework {
             "front.jpg",
             "back.jpg"
         };
+        
+        auto tempCmdBuffer = commandQueue->CreateCommandBuffer();
+        tempCmdBuffer->Begin();
+        const auto dim = cubemapTexture->GetSize();
+        uint8_t i = 0;
         for (const auto side : sides) {
             auto data = LoadImage(side);
+            auto tmpbuffer = device->CreateBuffer({
+                static_cast<uint32_t>(data.bytes.size_bytes),
+                {.StorageBuffer = true},
+                sizeof(char),
+                RGL::BufferAccess::Private,
+                {.Transfersource = true}
+            });
+            tmpbuffer->SetBufferData(data.bytes);
+            tempCmdBuffer->CopyBufferToTexture(tmpbuffer, data.bytes.size_bytes, {
+                .view = cubemapTexture->GetDefaultView(),
+                .destLoc = {
+                    .offset = {0,0},
+                    .extent = {dim.width, dim.height}
+                },
+                .arrayLayer = i,
+            });
+            i++;
         }
+        tempCmdBuffer->End();
+        tempCmdBuffer->Commit({});
+        tempCmdBuffer->BlockUntilCompleted();
     }
 
     void tick() final {
