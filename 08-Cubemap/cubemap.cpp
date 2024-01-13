@@ -9,24 +9,33 @@
 struct Cubemap : public ExampleFramework {
 
     RGLCommandBufferPtr commandBuffer;
-    RGLBufferPtr vertexBuffer;
+    RGLBufferPtr vertexBuffer, indBuffer;
     RGLRenderPipelinePtr pipeline;
     RGLRenderPassPtr renderPass;
     RGLTexturePtr cubemapTexture;
     RGLSamplerPtr sampler;
 
     struct ubo {
-        glm::ivec2 screenDim;
+        glm::mat4 viewProj;
+        float timeSinceStart;
     } ubo;
 
     void sampleinit(int argc, char** argv) final {
         vertexBuffer = device->CreateBuffer({
             {.VertexBuffer = true},
-            sizeof(BasicObjects::ScreenTriangle::Vertex),
-            BasicObjects::ScreenTriangle::vertices,
+            sizeof(BasicObjects::Cube::Vertex),
+            BasicObjects::Cube::vertices,
             RGL::BufferAccess::Private
         });
-        vertexBuffer->SetBufferData(BasicObjects::ScreenTriangle::vertices);
+        vertexBuffer->SetBufferData(BasicObjects::Cube::vertices);
+        
+        indBuffer = device->CreateBuffer({
+            {.IndexBuffer = true},
+            sizeof(BasicObjects::Cube::indices[0]),
+            BasicObjects::Cube::indices,
+            RGL::BufferAccess::Private
+        });
+        indBuffer->SetBufferData(BasicObjects::Cube::indices);
 
 
         auto layout = device->CreatePipelineLayout({
@@ -43,7 +52,7 @@ struct Cubemap : public ExampleFramework {
                 },
             },
             .constants = {
-                {ubo, 0, RGL::StageVisibility::Fragment}
+                {ubo, 0, RGL::StageVisibility::Vertex}
             }
         });
 
@@ -61,13 +70,25 @@ struct Cubemap : public ExampleFramework {
             .vertexConfig = {
                     .vertexBindings = {{
                         .binding = 0,
-                        .stride = sizeof(BasicObjects::ScreenTriangle::Vertex),
+                        .stride = sizeof(BasicObjects::Cube::Vertex),
                     }},
                         .attributeDescs = {
                             {
                                 .location = 0,
                                 .binding = 0,
-                                .offset = offsetof(BasicObjects::ScreenTriangle::Vertex,pos),
+                                .offset = offsetof(BasicObjects::Cube::Vertex,pos),
+                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                            },
+                            {
+                                .location = 1,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::Cube::Vertex,normal),
+                                .format = RGL::VertexAttributeFormat::R32G32B32_SignedFloat,
+                            },
+                            {
+                                .location = 2,
+                                .binding = 0,
+                                .offset = offsetof(BasicObjects::Cube::Vertex,uv),
                                 .format = RGL::VertexAttributeFormat::R32G32_SignedFloat,
                             },
                         }
@@ -83,7 +104,7 @@ struct Cubemap : public ExampleFramework {
                 .extent = {width, height}
             },
             .rasterizerConfig = {
-                .windingOrder = RGL::WindingOrder::Counterclockwise,
+                .windingOrder = RGL::WindingOrder::Clockwise,
             },
             .colorBlendConfig{
                 .attachments = {
@@ -164,6 +185,7 @@ struct Cubemap : public ExampleFramework {
     }
 
     void tick() final {
+        
         RGL::SwapchainPresentConfig presentConfig{
         };
 
@@ -174,6 +196,8 @@ struct Cubemap : public ExampleFramework {
         commandBuffer->Begin();
         auto nextimg = swapchain->ImageAtIndex(presentConfig.imageIndex);
         auto nextImgSize = nextimg->GetSize();
+        
+        ubo.viewProj = camera.GenerateViewProjMatrix(nextImgSize.width, nextImgSize.height);
 
         renderPass->SetAttachmentTexture(0, nextimg->GetDefaultView());
 
@@ -189,9 +213,10 @@ struct Cubemap : public ExampleFramework {
         commandBuffer->BindRenderPipeline(pipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
+        commandBuffer->SetIndexBuffer(indBuffer);
         commandBuffer->SetFragmentSampler(sampler, 0);
         commandBuffer->SetFragmentTexture(cubemapTexture->GetDefaultView(), 1);
-        commandBuffer->Draw(3);
+        commandBuffer->DrawIndexed(std::size(BasicObjects::Cube::indices));
 
         commandBuffer->EndRendering();
         commandBuffer->End();
@@ -209,6 +234,7 @@ struct Cubemap : public ExampleFramework {
         sampler.reset();
         cubemapTexture.reset();
         renderPass.reset();
+        indBuffer.reset();
         vertexBuffer.reset();
         pipeline.reset();
         commandBuffer.reset();
