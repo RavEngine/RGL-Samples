@@ -110,8 +110,8 @@ struct Deferred : public ExampleFramework {
             .height = (uint32_t)height,
             .format = idTexFormat,
             .initialLayout = RGL::ResourceLayout::Undefined,
+            .readbackEnabled = true,
             .debugName = "ID texture",
-            .readbackEnabled = true
         });
     }
     void sampleinit(int argc, char** argv) final {

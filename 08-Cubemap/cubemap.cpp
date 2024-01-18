@@ -134,7 +134,7 @@ struct Cubemap : public ExampleFramework {
 
         // create cubemap
         cubemapTexture = device->CreateTexture({
-             .usage = {.Sampled = true},
+            .usage = {.TransferDestination = true, .Sampled = true},
             .aspect = {.HasColor = true},
             .width = 1024,
             .height = 1024,
@@ -159,6 +159,10 @@ struct Cubemap : public ExampleFramework {
         tempCmdBuffer->Begin();
         const auto dim = cubemapTexture->GetSize();
         uint8_t i = 0;
+
+        // buffers must be valid for the lifetime of the commandbuffer
+        std::array<RGLBufferPtr, std::size(sides)> imagedataBuffers;
+
         for (const auto side : sides) {
             auto data = LoadImage(side);
             auto tmpbuffer = device->CreateBuffer({
@@ -177,6 +181,7 @@ struct Cubemap : public ExampleFramework {
                 },
                 .arrayLayer = i,
             });
+            imagedataBuffers[i] = tmpbuffer;
             i++;
         }
         tempCmdBuffer->End();
