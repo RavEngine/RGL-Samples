@@ -136,8 +136,8 @@ struct Cubemap : public ExampleFramework {
         cubemapTexture = device->CreateTexture({
             .usage = {.TransferDestination = true, .Sampled = true},
             .aspect = {.HasColor = true},
-            .width = 1024,
-            .height = 1024,
+            .width = 2048,
+            .height = 2048,
             .arrayLayers = 6,
             .format = RGL::TextureFormat::BGRA8_Unorm,
             .initialLayout = RGL::ResourceLayout::Undefined,
@@ -147,12 +147,12 @@ struct Cubemap : public ExampleFramework {
 
         // upload cubemap data
         constexpr const char* const sides[] = {
-            "right.jpg",
-            "left.jpg",
-            "top.jpg",
-            "bottom.jpg",
-            "front.jpg",
-            "back.jpg"
+            "right.png",
+            "left.png",
+            "top.png",
+            "bottom.png",
+            "front.png",
+            "back.png"
         };
         
         auto tempCmdBuffer = commandQueue->CreateCommandBuffer();
