@@ -67,38 +67,13 @@ jobs:
                 build/Release/*.obj
                 build/Release/*.png
 
-
-  build-mac:
-    name: macOS Check
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Configure
-        run: |
-            mkdir build
-            cd build
-            cmake -G "Xcode" ..
-      - name: Build
-        run: |
-            cd build
-            cmake --build . --config Release --target install -- -quiet
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-            name:  RGL_Samples_macOS
-            path: |
-                build/Release/*.app
-                
-  build-apple-mobile:
-    name: Apple Mobile Compile Check
+  build-apple:
+    name: Apple Compile Check
     runs-on: macos-latest
     strategy:
         fail-fast: false
         matrix:
-            tplatform: [iOS, tvOS]
+            tplatform: [iOS, tvOS, '']
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -108,7 +83,7 @@ jobs:
         run: |
             mkdir build
             cd build
-            cmake -G "Xcode" -DCMAKE_SYSTEM_NAME="${{ matrix.tplatform }}" -DCMAKE_XCODE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_CODE_SIGNING_ENABLED=NO ..
+            cmake -G "Xcode" -DCMAKE_SYSTEM_NAME="${{ matrix.tplatform }}" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ENABLED=NO ..
       - name: Build
         run: |
             cd build
