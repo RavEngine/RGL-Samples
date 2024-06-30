@@ -326,6 +326,7 @@ endif()
 add_sample(06-Asteroids)
 add_sample(07-Mipmap)
 add_sample(08-Cubemap)
+add_sample(09-BindlessTexturing)
 
 target_link_libraries(06-Asteroids
 	PUBLIC
