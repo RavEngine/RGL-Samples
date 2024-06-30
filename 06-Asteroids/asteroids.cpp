@@ -434,6 +434,7 @@ struct Asteroids : public ExampleFramework {
             .signalFence = swapchainFence,
         };
         commandBuffer->Commit(commitconfig);
+        commandBuffer->BlockUntilCompleted();
 
         swapchain->Present(presentConfig);
     }

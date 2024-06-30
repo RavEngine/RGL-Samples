@@ -807,7 +807,7 @@ struct XR : public ExampleFramework {
 			.signalFence = swapchainFence,
 		};
 		commandBuffer->Commit(commitconfig);
-
+		commandBuffer->BlockUntilCompleted();
 		swapchain->Present(presentConfig);
 
 		XrCompositionLayerProjection projectionLayer{

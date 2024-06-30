@@ -46,15 +46,13 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         run: |
-          wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
-          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
           sudo apt update
-          sudo apt install cmake make clang ninja-build vulkan-sdk libx11-dev libx11-xcb-dev libxtst-dev xcb libxcb-xkb-dev x11-xkb-utils libxkbcommon-x11-dev --no-install-recommends -y
+          sudo apt install cmake make gcc-13 g++-13 ninja-build libwayland-dev libx11-dev libx11-xcb-dev libxtst-dev xcb libxcb-xkb-dev x11-xkb-utils libxkbcommon-x11-dev --no-install-recommends -y
       - name: Configure
         run: |
             mkdir build
             cd build
-            CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake -G "Ninja" ..
+            CC=/usr/bin/gcc-13 CXX=/usr/bin/g++-13 cmake -G "Ninja" ..
       - name: Build
         run: |
             cd build
@@ -69,38 +67,13 @@ jobs:
                 build/Release/*.obj
                 build/Release/*.png
 
-
-  build-mac:
-    name: macOS Check
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Configure
-        run: |
-            mkdir build
-            cd build
-            cmake -G "Xcode" ..
-      - name: Build
-        run: |
-            cd build
-            cmake --build . --config Release --target install -- -quiet
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-            name:  RGL_Samples_macOS
-            path: |
-                build/Release/*.app
-                
-  build-apple-mobile:
-    name: Apple Mobile Compile Check
+  build-apple:
+    name: Apple Compile Check
     runs-on: macos-latest
     strategy:
         fail-fast: false
         matrix:
-            tplatform: [iOS, tvOS]
+            tplatform: [iOS, tvOS, '']
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -110,7 +83,7 @@ jobs:
         run: |
             mkdir build
             cd build
-            cmake -G "Xcode" -DCMAKE_SYSTEM_NAME="${{ matrix.tplatform }}" -DCMAKE_XCODE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_CODE_SIGNING_ENABLED=NO ..
+            cmake -G "Xcode" -DCMAKE_SYSTEM_NAME="${{ matrix.tplatform }}" -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ENABLED=NO ..
       - name: Build
         run: |
             cd build
