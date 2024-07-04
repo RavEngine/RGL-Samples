@@ -19,7 +19,7 @@ struct BindlessTexturing : public ExampleFramework {
     } comp_ubo;
 
     RGLCommandBufferPtr commandBuffer;
-    RGLBufferPtr vertexBuffer, indexBuffer;
+    RGLBufferPtr vertexBuffer, indexBuffer, instanceDataBuffer;
     RGLTexturePtr depthTexture, tx1, tx2, tx3;
     RGLSamplerPtr sampler;
     RGLRenderPipelinePtr renderPipeline;
@@ -64,12 +64,19 @@ struct BindlessTexturing : public ExampleFramework {
                     .type = RGL::BindingType::Sampler,
                     .stageFlags = RGL::BindingVisibility::Fragment,
                 },
-                {
+                 {
                     .binding = 1,
+                    .count = 512,
+                    .type = RGL::BindingType::StorageBuffer,
+                    .stageFlags = RGL::BindingVisibility::Vertex,
+                },
+                {
+                    .binding = 2,
                     .count = 512,
                     .type = RGL::BindingType::SampledImage,
                     .stageFlags = RGL::BindingVisibility::Fragment,
                 },
+                
             },
             .constants = {{ ubo, 0, RGL::StageVisibility::Vertex}}
             });
@@ -188,6 +195,20 @@ struct BindlessTexturing : public ExampleFramework {
         loadTx("tx29.png",tx1);
         loadTx("tx34.png",tx2);
         loadTx("tx39.png",tx3);
+
+        uint32_t indices[] = {
+            tx1->GetDefaultView().texture.dx.srvIDX,
+            tx2->GetDefaultView().texture.dx.srvIDX,
+            tx3->GetDefaultView().texture.dx.srvIDX
+        };
+
+        instanceDataBuffer = device->CreateBuffer({
+            {.StorageBuffer = true},
+            sizeof(decltype(indices[0])),
+            indices,
+            RGL::BufferAccess::Private
+            });
+        instanceDataBuffer->SetBufferData(indices);
        
     }
 
@@ -224,7 +245,8 @@ struct BindlessTexturing : public ExampleFramework {
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
         commandBuffer->SetFragmentSampler(sampler,0);
-        commandBuffer->SetFragmentTexture(heapStart, 1);        // expose all the textures
+        commandBuffer->SetFragmentTexture(heapStart, 2);        // expose all the textures
+        commandBuffer->BindBuffer(instanceDataBuffer, 1);
         commandBuffer->DrawIndexed(std::size(BasicObjects::Quad::indices), {.nInstances = 3});
 
         commandBuffer->EndRendering();
@@ -240,6 +262,7 @@ struct BindlessTexturing : public ExampleFramework {
     }
 
     void sampleshutdown() final {
+        instanceDataBuffer.reset();
         tx1.reset();
         tx2.reset();
         tx3.reset();
