@@ -20,7 +20,7 @@ struct BindlessTexturing : public ExampleFramework {
 
     RGLCommandBufferPtr commandBuffer;
     RGLBufferPtr vertexBuffer, indexBuffer;
-    RGLTexturePtr depthTexture;
+    RGLTexturePtr depthTexture, tx1, tx2, tx3;
     RGLSamplerPtr sampler;
     RGLRenderPipelinePtr renderPipeline;
     RGLRenderPassPtr renderPass;
@@ -66,6 +66,7 @@ struct BindlessTexturing : public ExampleFramework {
                 },
                 {
                     .binding = 1,
+                    .count = 512,
                     .type = RGL::BindingType::SampledImage,
                     .stageFlags = RGL::BindingVisibility::Fragment,
                 },
@@ -170,6 +171,24 @@ struct BindlessTexturing : public ExampleFramework {
         commandBuffer = commandQueue->CreateCommandBuffer();
         camera.position.z = 10;
         camera.position.y = 0.3;
+
+        auto loadTx = [this](const std::string_view name, RGLTexturePtr& tx) {
+            auto imagedata = LoadImage(name);
+
+            tx = device->CreateTextureWithData(RGL::TextureConfig{
+                .usage = {.TransferDestination = true, .Sampled = true},
+                .aspect = {.HasColor = true},
+                .width = imagedata.width,
+                .height = imagedata.height,
+                .format = RGL::TextureFormat::RGBA8_Unorm
+                },
+                imagedata.bytes
+            );
+        };
+        loadTx("tx29.png",tx1);
+        loadTx("tx34.png",tx2);
+        loadTx("tx39.png",tx3);
+       
     }
 
     void tick() final {
@@ -198,10 +217,14 @@ struct BindlessTexturing : public ExampleFramework {
                 .extent = {nextImgSize.width, nextImgSize.height}
             });
 
+        auto heapStart = device->GetGlobalBindlessTextureHeap();
+
         commandBuffer->BindRenderPipeline(renderPipeline);
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
+        commandBuffer->SetFragmentSampler(sampler,0);
+        commandBuffer->SetFragmentTexture(heapStart, 1);        // expose all the textures
         commandBuffer->DrawIndexed(std::size(BasicObjects::Quad::indices));
 
         commandBuffer->EndRendering();
@@ -217,6 +240,9 @@ struct BindlessTexturing : public ExampleFramework {
     }
 
     void sampleshutdown() final {
+        tx1.reset();
+        tx2.reset();
+        tx3.reset();
         renderPass.reset();
         depthTexture.reset();
         indexBuffer.reset();
@@ -233,6 +259,7 @@ struct BindlessTexturing : public ExampleFramework {
             .aspect = {.HasDepth = true},
             .width = (uint32_t)width,
             .height = (uint32_t)height,
+            .optimizedClearValue = {1},
             .format = RGL::TextureFormat::D32SFloat,
             .debugName = "Depth Texture"
             }
