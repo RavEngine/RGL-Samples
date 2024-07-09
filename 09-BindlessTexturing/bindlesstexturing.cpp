@@ -246,7 +246,7 @@ struct BindlessTexturing : public ExampleFramework {
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
         commandBuffer->SetFragmentSampler(sampler,0);
-        commandBuffer->SetFragmentTexture(heapStart, 2);        // expose all the textures
+        commandBuffer->SetFragmentTexture(heapStart, 0);        // expose all the textures
         commandBuffer->BindBuffer(instanceDataBuffer, 1);
         commandBuffer->DrawIndexed(std::size(BasicObjects::Quad::indices), {.nInstances = 3});
 
@@ -263,6 +263,7 @@ struct BindlessTexturing : public ExampleFramework {
     }
 
     void sampleshutdown() final {
+        sampler.reset();
         instanceDataBuffer.reset();
         tx1.reset();
         tx2.reset();

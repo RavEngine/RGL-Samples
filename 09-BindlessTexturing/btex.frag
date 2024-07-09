@@ -1,7 +1,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout(binding = 0) uniform sampler g_sampler;
-layout(set = 1, binding = 0) uniform texture2D textures[];
+layout(set = 1, binding = 0) uniform texture2D textures[];      // the bindless heap must be in set 1 binding 0
 
 layout(location = 0) in vec2 uv;
 layout(location = 1) in flat uint instance;
