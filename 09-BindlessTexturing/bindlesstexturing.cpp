@@ -71,8 +71,9 @@ struct BindlessTexturing : public ExampleFramework {
                     .stageFlags = RGL::BindingVisibility::Vertex,
                 },
                 {
-                    .binding = 2,
+                    .binding = 0,
                     .count = 512,
+                    .isBindless = true,
                     .type = RGL::BindingType::SampledImage,
                     .stageFlags = RGL::BindingVisibility::Fragment,
                 },
@@ -197,9 +198,9 @@ struct BindlessTexturing : public ExampleFramework {
         loadTx("tx39.png",tx3);
 
         uint32_t indices[] = {
-            tx1->GetDefaultView().texture.dx.srvIDX,
-            tx2->GetDefaultView().texture.dx.srvIDX,
-            tx3->GetDefaultView().texture.dx.srvIDX
+            tx1->GetDefaultView().GetReadonlyBindlessTextureHandle(),
+            tx2->GetDefaultView().GetReadonlyBindlessTextureHandle(),
+            tx3->GetDefaultView().GetReadonlyBindlessTextureHandle()
         };
 
         instanceDataBuffer = device->CreateBuffer({
@@ -290,7 +291,7 @@ struct BindlessTexturing : public ExampleFramework {
     }
 
     const char* SampleName() final {
-        return "Mipmap";
+        return "Bindless Texturing";
     }
 
     void onresize(int width, int height) final {
