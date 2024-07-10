@@ -242,6 +242,9 @@ struct BindlessTexturing : public ExampleFramework {
         auto heapStart = device->GetGlobalBindlessTextureHeap();
 
         commandBuffer->BindRenderPipeline(renderPipeline);
+        commandBuffer->UseResource(tx1->GetDefaultView());
+        commandBuffer->UseResource(tx2->GetDefaultView());
+        commandBuffer->UseResource(tx3->GetDefaultView());
         commandBuffer->SetVertexBytes(ubo, 0);
         commandBuffer->SetVertexBuffer(vertexBuffer);
         commandBuffer->SetIndexBuffer(indexBuffer);
