@@ -23,7 +23,7 @@ void main(){
 
     instance = indices[gl_InstanceID];
 
-    vec3 pos = vec3(inPosition, 0) + positions[instance];
+    vec3 pos = vec3(inPosition, 0) + positions[gl_InstanceID];
 
     gl_Position = ubo.viewProj * vec4(pos, 1);
     outUV = inUV;
