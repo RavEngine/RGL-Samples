@@ -224,7 +224,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "6.4"
+				VS_SHADER_MODEL "6.8"
 				VS_SHADER_TYPE "Vertex"
 				VS_SHADER_ENABLE_DEBUG ON
 				VS_SHADER_DISABLE_OPTIMIZATIONS ON
@@ -255,7 +255,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "6.4"
+				VS_SHADER_MODEL "6.8"
 				VS_SHADER_TYPE "Pixel"
 				VS_SHADER_ENABLE_DEBUG ON
 				VS_SHADER_DISABLE_OPTIMIZATIONS ON
@@ -286,7 +286,7 @@ macro(add_sample dir)
 			target_sources(${dir} PUBLIC ${outname})
 			set_source_files_properties(${outname} PROPERTIES 
 				GENERATED TRUE
-				VS_SHADER_MODEL "6.4"
+				VS_SHADER_MODEL "6.8"
 				VS_SHADER_TYPE "Compute"
 				VS_SHADER_ENABLE_DEBUG ON
 				VS_SHADER_DISABLE_OPTIMIZATIONS ON

@@ -215,7 +215,7 @@ void main(){
 			.format = RGL::TextureFormat::RGBA8_Unorm,
 			.debugName = "ImGui Font Texture"
 			},
-             {pixels, static_cast<size_t>(width * height * 4)}
+			{ {pixels, static_cast<size_t>(width * height * 4)} }
 		);
 		imgui_io->Fonts->SetTexID(fontsTexture.get());
         

@@ -19,14 +19,14 @@ void main() {
     const uint gridSize = 6;
 
     vec3 pos = vec3(
-        (gl_InstanceID % gridSize - gridSize/2.0f) * 2.5,   // column
-        (gl_InstanceID / gridSize - gridSize/2.0f) * 2.5,    // row
+        (gl_InstanceIndex % gridSize - gridSize/2.0f) * 2.5,   // column
+        (gl_InstanceIndex / gridSize - gridSize/2.0f) * 2.5,    // row
         0
     );
 
     const float scaleFactor = 1;
 
-    float spinSpeed = cubeSpeeds[gl_InstanceID];
+    float spinSpeed = cubeSpeeds[gl_InstanceIndex];
 
     mat4 model = mat4(
         vec4(scaleFactor, 0.0, 0.0, 0.0),

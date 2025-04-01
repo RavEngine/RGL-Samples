@@ -48,5 +48,5 @@ void main() {
     vec4 worldpos = (model *  rotmatx) * vec4(inPosition,1);
     
     gl_Position = ubo.viewProj * worldpos;
-    vertColor = vertColors[gl_VertexID % 3];
+    vertColor = vertColors[gl_VertexIndex % 3];
 }
